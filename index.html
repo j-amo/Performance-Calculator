@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resident Performance & Safety Calculator</title>
+    <title>Medical Performance & Safety Calculator</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -144,13 +144,44 @@
             text-align: right;
             margin-top: 5px;
         }
+        .performance-summary {
+            background-color: #f0f8ff;
+            border: 1px solid #b8daff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .performance-summary h3 {
+            margin-top: 0;
+            color: #003366;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+        .performance-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #0056b3;
+            display: block;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .performance-optimal {
+            color: #198754;
+        }
+        .performance-deficit {
+            color: #dc3545;
+        }
+        .performance-text {
+            font-size: 0.95em;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
         <div class="header">
-            <h1>Resident Performance & Safety Calculator</h1>
+            <h1>Medical Performance & Safety Calculator</h1>
             <p>An interactive tool based on a simulation model of medical provider performance under varying levels of sleep deprivation.</p>
         </div>
         <div class="calculator-body">
@@ -179,6 +210,12 @@
                         <option value="5">ICU</option>
                         <option value="6">Other</option>
                     </select>
+                </div>
+                
+                <div class="performance-summary">
+                    <h3>Performance Status</h3>
+                    <span class="performance-value" id="performanceStatusValue">-15%</span>
+                    <p class="performance-text" id="performanceStatusText">Your current sleep level results in a 15% deficit in overall clinical performance compared to optimal levels.</p>
                 </div>
             </div>
             <div class="outputs">
@@ -246,13 +283,18 @@
             }
         };
 
+        // Constants for optimal performance
+        const OPTIMAL_SLEEP_HOURS = 8;
+        const OPTIMAL_CLINICAL_SCORE = 94; // Approximate score at 8 hours of sleep
+
         // Track previous values to highlight changes
         let previousValues = {
             clinicalScore: null,
             reactionTime: null,
             errorRisk: null,
             lapses: null,
-            equivalence: null
+            equivalence: null,
+            performanceStatus: null
         };
 
         function validateAndCalculate() {
@@ -323,6 +365,22 @@
                 equivalenceText = "Comparable to a Blood Alcohol Concentration of >0.10%";
             }
 
+            // Calculate Performance Status (Deficit or Optimal)
+            let performanceDeficit = 0;
+            let performanceText = "";
+            let performanceStatusClass = "";
+
+            if (sleepHours >= OPTIMAL_SLEEP_HOURS) {
+                performanceDeficit = 0;
+                performanceText = "Your current sleep level is optimal for clinical performance.";
+                performanceStatusClass = "performance-optimal";
+            } else {
+                // Calculate approximate deficit based on clinical score
+                performanceDeficit = Math.round((1 - (score / OPTIMAL_CLINICAL_SCORE)) * 100);
+                performanceText = `Your current sleep level results in a ${performanceDeficit}% deficit in overall clinical performance compared to optimal levels.`;
+                performanceStatusClass = "performance-deficit";
+            }
+
             // --- 3. Update the Display with Highlighting for Changes ---
             updateValueWithHighlight('clinicalScoreOutput', 'clinicalCard', score.toFixed(1), previousValues.clinicalScore);
             updateValueWithHighlight('reactionTimeOutput', 'reactionCard', rt.toFixed(0), previousValues.reactionTime);
@@ -330,12 +388,26 @@
             updateValueWithHighlight('lapsesOutput', 'lapseCard', lapses.toFixed(1), previousValues.lapses);
             updateValueWithHighlight('equivalenceOutput', 'equivalenceCard', equivalenceText, previousValues.equivalence);
             
+            // Update Performance Status section
+            const performanceValueElement = document.getElementById('performanceStatusValue');
+            const performanceTextElement = document.getElementById('performanceStatusText');
+            
+            if (performanceDeficit === 0) {
+                performanceValueElement.innerText = "Optimal";
+            } else {
+                performanceValueElement.innerText = `-${performanceDeficit}%`;
+            }
+            
+            performanceValueElement.className = "performance-value " + performanceStatusClass;
+            performanceTextElement.innerText = performanceText;
+            
             // Update previous values for next comparison
             previousValues.clinicalScore = score.toFixed(1);
             previousValues.reactionTime = rt.toFixed(0);
             previousValues.errorRisk = "+" + errorIncrease.toFixed(0);
             previousValues.lapses = lapses.toFixed(1);
             previousValues.equivalence = equivalenceText;
+            previousValues.performanceStatus = performanceDeficit;
         }
 
         function updateValueWithHighlight(outputId, cardId, newValue, oldValue) {
@@ -366,6 +438,7 @@
             previousValues.errorRisk = document.getElementById('errorRiskOutput').innerText;
             previousValues.lapses = document.getElementById('lapsesOutput').innerText;
             previousValues.equivalence = document.getElementById('equivalenceOutput').innerText;
+            previousValues.performanceStatus = document.getElementById('performanceStatusValue').innerText;
         };
     </script>
 </body>
