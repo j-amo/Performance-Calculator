@@ -90,12 +90,21 @@
             grid-template-columns: 1fr 1fr;
             gap: 20px;
         }
+        @media (max-width: 480px) {
+            .output-grid {
+                grid-template-columns: 1fr;
+            }
+        }
         .output-card {
             background-color: #f8f9fa;
             border: 1px solid #e9ecef;
             border-radius: 8px;
             padding: 15px;
             text-align: center;
+            transition: background-color 0.3s ease;
+        }
+        .output-card.highlight {
+            background-color: #f0f7ff;
         }
         .output-card h3 {
             margin: 0 0 10px;
@@ -106,6 +115,7 @@
             font-size: 2.2em;
             font-weight: 700;
             color: #0056b3;
+            transition: color 0.3s ease;
         }
         .output-unit {
             font-size: 0.8em;
@@ -128,6 +138,12 @@
             font-size: 0.8em;
             color: #6c757d;
         }
+        .range-display {
+            font-size: 0.9em;
+            color: #6c757d;
+            text-align: right;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -142,7 +158,8 @@
                 <h2>Your Inputs</h2>
                 <div class="input-group">
                     <label for="sleepHours">Hours of Sleep Tonight</label>
-                    <input type="number" id="sleepHours" value="5.5" min="0" max="10" step="0.5" oninput="calculatePerformance()">
+                    <input type="number" id="sleepHours" value="5.5" min="0" max="10" step="0.5" oninput="validateAndCalculate()">
+                    <div class="range-display">Range: 0-10 hours</div>
                 </div>
                 <div class="input-group">
                     <label for="experience">Experience Level</label>
@@ -167,27 +184,27 @@
             <div class="outputs">
                 <h2>Predicted Performance</h2>
                 <div class="output-grid">
-                    <div class="output-card">
+                    <div class="output-card" id="clinicalCard">
                         <h3>Clinical Skill Score</h3>
                         <span class="output-value" id="clinicalScoreOutput">84.6</span>
                         <span class="output-unit">/ 100</span>
                     </div>
-                    <div class="output-card">
+                    <div class="output-card" id="reactionCard">
                         <h3>Reaction Time</h3>
                         <span class="output-value" id="reactionTimeOutput">334</span>
                         <span class="output-unit">ms</span>
                     </div>
-                    <div class="output-card">
+                    <div class="output-card" id="errorCard">
                         <h3>Medical Error Risk</h3>
                         <span class="output-value" id="errorRiskOutput">+37</span>
                         <span class="output-unit">% increase in odds</span>
                     </div>
-                    <div class="output-card">
+                    <div class="output-card" id="lapseCard">
                         <h3>Attentional Lapses</h3>
                         <span class="output-value" id="lapsesOutput">5.5</span>
                         <span class="output-unit">expected count</span>
                     </div>
-                    <div class="output-card equivalence-card">
+                    <div class="output-card equivalence-card" id="equivalenceCard">
                         <h3>Cognitive State Equivalent</h3>
                         <span class="equivalence-value" id="equivalenceOutput">Comparable to a Blood Alcohol Concentration of ~0.05%</span>
                     </div>
@@ -229,9 +246,34 @@
             }
         };
 
+        // Track previous values to highlight changes
+        let previousValues = {
+            clinicalScore: null,
+            reactionTime: null,
+            errorRisk: null,
+            lapses: null,
+            equivalence: null
+        };
+
+        function validateAndCalculate() {
+            // Get and validate the sleep hours
+            let sleepHours = parseFloat(document.getElementById('sleepHours').value);
+            
+            // Ensure it's within valid range
+            if (isNaN(sleepHours) || sleepHours < 0) {
+                sleepHours = 0;
+                document.getElementById('sleepHours').value = 0;
+            } else if (sleepHours > 10) {
+                sleepHours = 10;
+                document.getElementById('sleepHours').value = 10;
+            }
+            
+            calculatePerformance();
+        }
+
         function calculatePerformance() {
             // --- 1. Get User Inputs ---
-            const sleepHours = parseFloat(document.getElementById('sleepHours').value);
+            const sleepHours = parseFloat(document.getElementById('sleepHours').value) || 0;
             const experience = document.getElementById('experience').value;
             const specialty = document.getElementById('specialty').value;
             
@@ -281,18 +323,50 @@
                 equivalenceText = "Comparable to a Blood Alcohol Concentration of >0.10%";
             }
 
+            // --- 3. Update the Display with Highlighting for Changes ---
+            updateValueWithHighlight('clinicalScoreOutput', 'clinicalCard', score.toFixed(1), previousValues.clinicalScore);
+            updateValueWithHighlight('reactionTimeOutput', 'reactionCard', rt.toFixed(0), previousValues.reactionTime);
+            updateValueWithHighlight('errorRiskOutput', 'errorCard', "+" + errorIncrease.toFixed(0), previousValues.errorRisk);
+            updateValueWithHighlight('lapsesOutput', 'lapseCard', lapses.toFixed(1), previousValues.lapses);
+            updateValueWithHighlight('equivalenceOutput', 'equivalenceCard', equivalenceText, previousValues.equivalence);
+            
+            // Update previous values for next comparison
+            previousValues.clinicalScore = score.toFixed(1);
+            previousValues.reactionTime = rt.toFixed(0);
+            previousValues.errorRisk = "+" + errorIncrease.toFixed(0);
+            previousValues.lapses = lapses.toFixed(1);
+            previousValues.equivalence = equivalenceText;
+        }
 
-            // --- 3. Update the Display ---
-            document.getElementById('clinicalScoreOutput').innerText = score.toFixed(1);
-            document.getElementById('reactionTimeOutput').innerText = rt.toFixed(0);
-            document.getElementById('errorRiskOutput').innerText = "+" + errorIncrease.toFixed(0);
-            document.getElementById('lapsesOutput').innerText = lapses.toFixed(1);
-            document.getElementById('equivalenceOutput').innerText = equivalenceText;
+        function updateValueWithHighlight(outputId, cardId, newValue, oldValue) {
+            const element = document.getElementById(outputId);
+            const card = document.getElementById(cardId);
+            
+            // Update the text
+            element.innerText = newValue;
+            
+            // Only highlight if we have a previous value and it's different
+            if (oldValue !== null && newValue !== oldValue) {
+                // Apply highlight
+                card.classList.add('highlight');
+                
+                // Remove highlight after animation
+                setTimeout(() => {
+                    card.classList.remove('highlight');
+                }, 800);
+            }
         }
 
         // Initial calculation on page load
-        window.onload = calculatePerformance;
-
+        window.onload = function() {
+            calculatePerformance();
+            // Initialize previous values after first calculation
+            previousValues.clinicalScore = document.getElementById('clinicalScoreOutput').innerText;
+            previousValues.reactionTime = document.getElementById('reactionTimeOutput').innerText;
+            previousValues.errorRisk = document.getElementById('errorRiskOutput').innerText;
+            previousValues.lapses = document.getElementById('lapsesOutput').innerText;
+            previousValues.equivalence = document.getElementById('equivalenceOutput').innerText;
+        };
     </script>
 </body>
 </html>
