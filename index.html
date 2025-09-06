@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Physician Performance & Safety Calculator</title>
+    <title>High-Stakes Performance & Safety Calculator</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f4f7f9; color: #333; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         .container { width: 100%; max-width: 800px; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden; }
@@ -26,14 +26,15 @@
         .equivalence-card { grid-column: 1 / -1; background-color: #fffbe6; border-color: #ffe58f; color: #664d03; }
         .equivalence-value { font-size: 1.1em; font-weight: 600; }
         .footer { background-color: #e9ecef; padding: 15px; text-align: center; font-size: 0.8em; color: #6c757d; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
     <div class="container">
         <div class="header">
-            <h1>Physician Performance & Safety Calculator</h1>
-            <p>Model your performance deficit relative to an 8-hour baseline.</p>
+            <h1>High-Stakes Performance & Safety Calculator</h1>
+            <p>Model performance deficits based on a universal synthesis of fatigue science.</p>
         </div>
         <div class="calculator-body">
             <div class="inputs">
@@ -43,21 +44,19 @@
                     <input type="number" id="sleepHours" value="6.0" min="0" max="10" step="0.1" oninput="calculatePerformance()">
                 </div>
                 <div class="input-group">
-                    <label for="experience">Experience Level</label>
-                    <select id="experience" onchange="calculatePerformance()">
-                        <option value="1">Student</option>
-                        <option value="2" selected>Resident</option>
-                        <option value="3">Expert</option>
+                    <label for="profession">Profession</label>
+                    <select id="profession" onchange="calculatePerformance()">
+                        <option value="1" selected>Medical</option>
+                        <option value="2">Aviation</option>
+                        <option value="3">Military</option>
                     </select>
                 </div>
                 <div class="input-group">
-                    <label for="specialty">Specialty</label>
-                    <select id="specialty" onchange="calculatePerformance()">
-                        <option value="1">Emergency Med</option>
-                        <option value="2">Surgery</option>
-                        <option value="3" selected>Internal Med</option>
-                        <option value="4">Anesthesiology</option>
-                        <option value="5">ICU</option>
+                    <label for="experience">Experience Level</label>
+                    <select id="experience" onchange="calculatePerformance()">
+                        <option value="1">Novice</option>
+                        <option value="2" selected>Experienced</option>
+                        <option value="3">Expert</option>
                     </select>
                 </div>
             </div>
@@ -65,25 +64,32 @@
                 <h2>Predicted Performance</h2>
                 <div class="output-grid">
                     <div class="output-card">
-                        <h3>Clinical Skill Score</h3>
-                        <span class="output-value" id="clinicalScoreOutput"></span>
-                        <span class="output-unit">/ 100</span>
-                    </div>
-                    <div class="output-card">
                         <h3>Reaction Time</h3>
                         <span class="output-value" id="reactionTimeOutput"></span>
                         <span class="output-unit">ms</span>
-                    </div>
-                    <div class="output-card">
-                        <h3>Medical Error Risk</h3>
-                        <span class="output-value" id="errorRiskOutput"></span>
-                        <span class="output-unit">vs. 8h baseline</span>
                     </div>
                     <div class="output-card">
                         <h3>Attentional Lapses</h3>
                         <span class="output-value" id="lapsesOutput"></span>
                         <span class="output-unit">expected count</span>
                     </div>
+
+                    <div class="output-card profession-specific hidden" id="medicalCard">
+                        <h3>Clinical Skill Score</h3>
+                        <span class="output-value" id="clinicalScoreOutput"></span>
+                        <span class="output-unit">/ 100</span>
+                    </div>
+                    <div class="output-card profession-specific hidden" id="aviationCard">
+                        <h3>Flight Sim Accuracy</h3>
+                        <span class="output-value" id="aviationScoreOutput"></span>
+                        <span class="output-unit">%</span>
+                    </div>
+                    <div class="output-card profession-specific hidden" id="militaryCard">
+                        <h3>Marksmanship Score</h3>
+                        <span class="output-value" id="militaryScoreOutput"></span>
+                        <span class="output-unit">/ 100</span>
+                    </div>
+
                     <div class="output-card equivalence-card">
                         <h3>Cognitive State Equivalent</h3>
                         <span class="equivalence-value" id="equivalenceOutput"></span>
@@ -92,67 +98,76 @@
             </div>
         </div>
         <div class="footer">
-            <p>Disclaimer: This simulation is for educational purposes. Model parameters are informed by a synthesis of medical and universal fatigue science literature.</p>
+            <p>Disclaimer: This simulation is for educational purposes. Parameters are informed by a synthesis of universal fatigue science literature.</p>
         </div>
     </div>
 
     <script>
-        // Per-hour deficit parameters from the final Stata model (Version 5.0)
+        /* --- Parameters from the Universal Stata Model (Core + Specific) --- */
         const params = {
-            clinicalScore: { base: 95, per_hour_debt: -3, exp_effect: { '3': 1.5 }, spec_effect: { '2': -0.8 } },
-            reactionTime: { base: 280, per_hour_debt: 30, exp_effect: { '3': -10 } },
-            errorRisk: { base_log_odds: -3, per_hour_debt_log_or: Math.log(1.12) },
-            lapses: { base: 0.5, debt_sq_coeff: 0.4, exp_effect: { '3': -0.2 } }
+            /* Universal "Core" Parameters */
+            reactionTime: { base: 280, per_hour_debt: 32, exp_effect: { '3': -10 } },
+            lapses: { base: 0.5, debt_sq_coeff: 0.4, exp_effect: { '3': -0.2 } },
+            
+            /* Profession "Specific" Parameters */
+            medical: { base: 95, per_hour_debt: -3, exp_effect: { '3': 1.5 } },
+            aviation: { base: 98, per_hour_debt: -5.3, exp_effect: { '3': 2 } },
+            military: { base: 90, per_hour_debt: -4.5, exp_effect: { '3': 2.5 } }
         };
 
         function calculatePerformance() {
-            // Get User Inputs
+            /* 1. Get User Inputs */
             const sleepHours = parseFloat(document.getElementById('sleepHours').value);
+            const profession = document.getElementById('profession').value;
             const experience = document.getElementById('experience').value;
-            const specialty = document.getElementById('specialty').value;
             
-            // Calculate sleep debt relative to an 8-hour baseline
+            /* Calculate sleep debt relative to an 8-hour baseline */
             const sleepDebt = Math.max(0, 8 - sleepHours);
 
-            // --- Perform Calculations ---
+            /* 2. Hide all profession-specific cards initially */
+            document.querySelectorAll('.profession-specific').forEach(card => card.classList.add('hidden'));
+
+            /* --- 3. Perform Calculations --- */
             let p = params;
 
-            // Clinical Score
-            let score = p.clinicalScore.base + (p.clinicalScore.per_hour_debt * sleepDebt) + (p.clinicalScore.exp_effect[experience] || 0) + (p.clinicalScore.spec_effect[specialty] || 0);
-            score = Math.max(50, Math.min(100, score));
-            
-            // Reaction Time
+            /* Calculate Universal "Core" Metrics */
             let rt = p.reactionTime.base + (p.reactionTime.per_hour_debt * sleepDebt) + (p.reactionTime.exp_effect[experience] || 0);
-
-            // Medical Error
-            let errorText;
-            if (sleepDebt > 0) {
-                let or = Math.pow(Math.exp(p.errorRisk.per_hour_debt_log_or), sleepDebt);
-                errorText = `+${((or - 1) * 100).toFixed(0)}%`;
-            } else {
-                errorText = "Baseline";
-            }
-
-            // Attentional Lapses (non-linear effect)
             let lapses = p.lapses.base + (p.lapses.debt_sq_coeff * Math.pow(sleepDebt, 2)) + (p.lapses.exp_effect[experience] || 0);
             lapses = Math.max(0, lapses);
 
-            // BAC Equivalence
+            /* Calculate Profession "Specific" Metric and Un-hide the correct card */
+            switch (profession) {
+                case '1': /* Medical */
+                    document.getElementById('medicalCard').classList.remove('hidden');
+                    let clinicalScore = p.medical.base + (p.medical.per_hour_debt * sleepDebt) + (p.medical.exp_effect[experience] || 0);
+                    document.getElementById('clinicalScoreOutput').innerText = Math.max(50, Math.min(100, clinicalScore)).toFixed(1);
+                    break;
+                case '2': /* Aviation */
+                    document.getElementById('aviationCard').classList.remove('hidden');
+                    let aviationScore = p.aviation.base + (p.aviation.per_hour_debt * sleepDebt) + (p.aviation.exp_effect[experience] || 0);
+                    document.getElementById('aviationScoreOutput').innerText = Math.max(50, Math.min(100, aviationScore)).toFixed(1);
+                    break;
+                case '3': /* Military */
+                    document.getElementById('militaryCard').classList.remove('hidden');
+                    let militaryScore = p.military.base + (p.military.per_hour_debt * sleepDebt) + (p.military.exp_effect[experience] || 0);
+                    document.getElementById('militaryScoreOutput').innerText = Math.max(50, Math.min(100, militaryScore)).toFixed(1);
+                    break;
+            }
+
+            /* BAC Equivalence */
             let equivalenceText = "Comparable to a rested state (8h+).";
             if (sleepHours < 8) equivalenceText = "Minor cognitive slowing.";
             if (sleepHours <= 6) equivalenceText = "Comparable to a BAC of ~0.05%";
             if (sleepHours <= 5) equivalenceText = "Comparable to a BAC of ~0.08% (Legally Impaired)";
             if (sleepHours <= 4) equivalenceText = "Comparable to a BAC of >0.10%";
             
-            // --- Update the Display ---
-            document.getElementById('clinicalScoreOutput').innerText = score.toFixed(1);
+            /* --- 4. Update the Display --- */
             document.getElementById('reactionTimeOutput').innerText = rt.toFixed(0);
-            document.getElementById('errorRiskOutput').innerText = errorText;
             document.getElementById('lapsesOutput').innerText = lapses.toFixed(1);
             document.getElementById('equivalenceOutput').innerText = equivalenceText;
         }
 
-        // Initial calculation on page load
+        /* Initial calculation on page load */
         window.onload = calculatePerformance;
     </script>
 </body>
