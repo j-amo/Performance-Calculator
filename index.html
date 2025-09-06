@@ -23,7 +23,6 @@
         .output-card h3 { margin: 0 0 10px; font-size: 1em; color: #003366; }
         .output-value { font-size: 2.2em; font-weight: 700; color: #0056b3; }
         .output-unit { font-size: 0.8em; color: #6c757d; }
-        /* UPDATED: Added styles for summary cards */
         .summary-card { grid-column: 1 / -1; }
         .equivalence-card { background-color: #fffbe6; border-color: #ffe58f; color: #664d03; }
         .overall-card { background-color: #e6f7ff; border-color: #91d5ff; margin-bottom: 20px; }
@@ -108,7 +107,12 @@
     </div>
 
     <script>
+        /* --- Parameters from the Final Stata Model --- */
         const params = {
+            /* This new parameter is from the final regression in your Stata log */
+            overallPerformance: { base: 88.86, per_hour_debt: -10.81 },
+            
+            /* These are the parameters for the individual component metrics */
             clinicalScore: { base: 95, per_hour_debt: -3, exp_effect: { '3': 1.5 }, spec_effect: { '2': -0.8 } },
             reactionTime: { base: 280, per_hour_debt: 30, exp_effect: { '3': -10 } },
             errorRisk: { base_log_odds: -3, per_hour_debt_log_or: Math.log(1.12) },
@@ -122,8 +126,14 @@
             
             const sleepDebt = Math.max(0, 8 - sleepHours);
 
-            /* --- Calculate Individual Metrics --- */
+            /* --- Calculate All Metrics --- */
             let p = params;
+
+            /* UPDATED: Direct calculation of Overall Performance from the final regression */
+            let overallPerformance = p.overallPerformance.base + (p.overallPerformance.per_hour_debt * sleepDebt);
+            overallPerformance = Math.max(0, Math.min(100, overallPerformance));
+
+            /* Calculations for the individual component cards */
             let score = p.clinicalScore.base + (p.clinicalScore.per_hour_debt * sleepDebt) + (p.clinicalScore.exp_effect[experience] || 0) + (p.clinicalScore.spec_effect[specialty] || 0);
             score = Math.max(50, Math.min(100, score));
             
@@ -133,28 +143,6 @@
 
             let lapses = p.lapses.base + (p.lapses.debt_sq_coeff * Math.pow(sleepDebt, 2)) + (p.lapses.exp_effect[experience] || 0);
             lapses = Math.max(0, lapses);
-
-            /* --- UPDATED: Calculate Overall Performance Score --- */
-            /* 1. Define realistic performance ranges for normalization */
-            const ranges = {
-                score: { min: 65, max: 97 }, /* Typical range from ~2h to 8h sleep */
-                rt: { min: 270, max: 550 }, /* Typical range from rested to ~24h awake */
-                lapses: { min: 0, max: 25 } /* Typical range from rested to severe debt */
-            };
-
-            /* 2. Normalize each score to a 0-1 scale */
-            let normScore = (score - ranges.score.min) / (ranges.score.max - ranges.score.min);
-            let normRt = (ranges.rt.max - rt) / (ranges.rt.max - ranges.rt.min); /* Inverted */
-            let normLapses = (ranges.lapses.max - lapses) / (ranges.lapses.max - ranges.lapses.min); /* Inverted */
-            
-            /* Clamp normalized values between 0 and 1 */
-            normScore = Math.max(0, Math.min(1, normScore));
-            normRt = Math.max(0, Math.min(1, normRt));
-            normLapses = Math.max(0, Math.min(1, normLapses));
-
-            /* 3. Calculate weighted average */
-            let overallPerformance = (normScore * 0.5) + (normRt * 0.3) + (normLapses * 0.2);
-            overallPerformance *= 100;
 
             /* BAC Equivalence */
             let equivalenceText = "Comparable to a rested state (8h+).";
