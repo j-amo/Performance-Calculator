@@ -109,7 +109,7 @@
     <script>
         /* --- Parameters from the Final Stata Model --- */
         const params = {
-            /* This new parameter is from the final regression in your Stata log */
+            /* This parameter is from the final regression in your Stata log */
             overallPerformance: { base: 88.86, per_hour_debt: -10.81 },
             
             /* These are the parameters for the individual component metrics */
@@ -129,11 +129,12 @@
             /* --- Calculate All Metrics --- */
             let p = params;
 
-            /* UPDATED: Direct calculation of Overall Performance from the final regression */
+            /* CORRECTED: Direct calculation of Overall Performance from the final regression */
             let overallPerformance = p.overallPerformance.base + (p.overallPerformance.per_hour_debt * sleepDebt);
+            /* This main score does not change with experience/specialty as it's the overall average effect */
             overallPerformance = Math.max(0, Math.min(100, overallPerformance));
 
-            /* Calculations for the individual component cards */
+            /* Calculations for the individual component cards still include experience/specialty effects */
             let score = p.clinicalScore.base + (p.clinicalScore.per_hour_debt * sleepDebt) + (p.clinicalScore.exp_effect[experience] || 0) + (p.clinicalScore.spec_effect[specialty] || 0);
             score = Math.max(50, Math.min(100, score));
             
