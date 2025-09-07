@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Medical Performance & Safety Calculator</title>
+  <title>Physician Performance & Safety Calculator</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f4f7f9; color: #333; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
     .container { width: 100%; max-width: 800px; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden; }
@@ -29,14 +29,25 @@
     .overall-card .output-value { color: #003366; }
     .equivalence-value { font-size: 1.1em; font-weight: 600; }
     .footer { background-color: #e9ecef; padding: 15px; text-align: center; font-size: 0.8em; color: #6c757d; }
+
+    /* 🔴 Deficit card severity styles */
+    .deficit-card { border-radius: 8px; padding: 15px; text-align: center; }
+    .deficit-card h3 { margin: 0 0 10px; font-size: 1em; color: #b71c1c; }
+    .deficit-card .output-unit { font-size: 0.8em; }
+    .deficit-low { background-color: #fff5f5; border: 1px solid #ffcccc; color: #b71c1c; }
+    .deficit-low .output-value { color: #b71c1c; }
+    .deficit-medium { background-color: #ffe5e5; border: 1px solid #ff9999; color: #b71c1c; }
+    .deficit-medium .output-value { color: #b71c1c; }
+    .deficit-high { background-color: #ffcccc; border: 1px solid #ff3333; color: #7f0000; }
+    .deficit-high .output-value { color: #7f0000; }
   </style>
 </head>
 <body>
 
 <div class="container">
   <div class="header">
-    <h1>Medical Performance & Safety Calculator</h1>
-    <p>Model your performance deficit relative to an 8-hour baseline, based on validated research.</p>
+    <h1>Physician Performance & Safety Calculator</h1>
+    <p>Model your performance deficit relative to an 8-hour baseline.</p>
   </div>
   <div class="calculator-body">
     <div class="inputs">
@@ -70,6 +81,16 @@
         <h3>Overall Performance</h3>
         <span class="output-value" id="overallPerformanceOutput"></span>
         <span class="output-unit">/ 100</span>
+        <p style="font-size:0.8em; color:#6c757d; margin-top:8px;">
+          Note: Rested baseline ≈ 80/100. Remaining ~20 points reflect non-sleep factors (stress, distraction, environment).
+        </p>
+      </div>
+
+      <!-- 🔴 Deficit card moved up and styled with severity -->
+      <div class="output-card summary-card deficit-card" id="deficitCard">
+        <h3>Deficit vs Baseline</h3>
+        <span class="output-value" id="relativeDropOutput"></span>
+        <span class="output-unit">% below your rested level</span>
       </div>
 
       <div class="output-grid">
@@ -101,45 +122,45 @@
     </div>
   </div>
   <div class="footer">
-    <p>Disclaimer: Educational simulation only. Parameters informed by Van Dongen (2003), Dawson & Reid (1997), Landrigan (2004), Barger (2005), Eastridge (2003), Taffinder (1998), and related work.</p>
+    <p>Disclaimer: Simulation for education. Baseline <100 reflects inherent human variability and non-sleep factors.</p>
   </div>
 </div>
 
 <script>
-/* --- Parameters from the 10,000-sample Stata model --- */
+/* Parameters from the 10,000-sample Stata model */
 const params = {
-  overallPerformance: { base: 80.4, per_hour_debt: -8.85 },  // approximate slope
-  clinicalScore: { base: 95, per_hour_debt: -3.06, exp_effect: { '3': 1 }, spec_effect: { '2': -2 } },
-  reactionTime: { base: 280, per_hour_debt: 32, exp_effect: { '3': -10 } },
+  overallPerformance: { base: 80.4, per_hour_debt: -8.85 }, // from regression
+  clinicalScore: { base: 95, per_hour_debt: -3.06 },
+  reactionTime: { base: 280, per_hour_debt: 32 },
   errorRisk: { base_log_odds: -3, per_hour_debt_log_or: Math.log(1.09) },
-  lapses: { base: 0.5, debt_sq_coeff: 0.4, exp_effect: { '3': -0.2 } }
+  lapses: { base: 0.5, debt_sq_coeff: 0.4 }
 };
 
 function calculatePerformance() {
   const sleepHours = parseFloat(document.getElementById('sleepHours').value);
-  const experience = document.getElementById('experience').value;
-  const specialty = document.getElementById('specialty').value;
-  
   const sleepDebt = Math.max(0, 8 - sleepHours);
   let p = params;
 
-  /* Overall performance */
+  /* Absolute overall performance */
   let overallPerformance = p.overallPerformance.base + (p.overallPerformance.per_hour_debt * sleepDebt);
   overallPerformance = Math.max(0, Math.min(100, overallPerformance));
 
+  /* Relative deficit vs rested baseline (80.4) */
+  let relativeDrop = ((p.overallPerformance.base - overallPerformance) / p.overallPerformance.base) * 100;
+
   /* Clinical skill */
-  let score = p.clinicalScore.base + (p.clinicalScore.per_hour_debt * sleepDebt) + (p.clinicalScore.exp_effect[experience] || 0) + (p.clinicalScore.spec_effect[specialty] || 0);
+  let score = p.clinicalScore.base + (p.clinicalScore.per_hour_debt * sleepDebt);
   score = Math.max(50, Math.min(100, score));
   
   /* Reaction time */
-  let rt = p.reactionTime.base + (p.reactionTime.per_hour_debt * sleepDebt) + (p.reactionTime.exp_effect[experience] || 0);
+  let rt = p.reactionTime.base + (p.reactionTime.per_hour_debt * sleepDebt);
 
   /* Error risk */
   let orFactor = Math.exp(p.errorRisk.per_hour_debt_log_or * sleepDebt);
   let errorText = (sleepDebt > 0) ? `+${((orFactor - 1) * 100).toFixed(0)}%` : "Baseline";
 
   /* Attentional lapses */
-  let lapses = p.lapses.base + (p.lapses.debt_sq_coeff * Math.pow(sleepDebt, 2)) + (p.lapses.exp_effect[experience] || 0);
+  let lapses = p.lapses.base + (p.lapses.debt_sq_coeff * Math.pow(sleepDebt, 2));
   lapses = Math.max(0, lapses);
 
   /* Equivalence */
@@ -149,13 +170,25 @@ function calculatePerformance() {
   if (sleepHours <= 5) equivalenceText = "Comparable to BAC ~0.08% (Legally Impaired)";
   if (sleepHours <= 4) equivalenceText = "Comparable to BAC >0.10%";
 
-  /* Update display */
+  /* Update displays */
   document.getElementById('overallPerformanceOutput').innerText = overallPerformance.toFixed(1);
   document.getElementById('clinicalScoreOutput').innerText = score.toFixed(1);
   document.getElementById('reactionTimeOutput').innerText = rt.toFixed(0);
   document.getElementById('errorRiskOutput').innerText = errorText;
   document.getElementById('lapsesOutput').innerText = lapses.toFixed(1);
   document.getElementById('equivalenceOutput').innerText = equivalenceText;
+
+  /* Update deficit card value and style */
+  const deficitCard = document.getElementById('deficitCard');
+  deficitCard.classList.remove('deficit-low','deficit-medium','deficit-high');
+  if (relativeDrop < 10) {
+    deficitCard.classList.add('deficit-low');
+  } else if (relativeDrop < 20) {
+    deficitCard.classList.add('deficit-medium');
+  } else {
+    deficitCard.classList.add('deficit-high');
+  }
+  document.getElementById('relativeDropOutput').innerText = relativeDrop.toFixed(1);
 }
 
 window.onload = calculatePerformance;
