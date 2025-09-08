@@ -2,44 +2,46 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Physician Performance & Safety Calculator</title>
 <style>
-  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-         background:#f4f7f9; color:#333; margin:0; padding:20px; display:flex; justify-content:center; align-items:center; min-height:100vh;}
-  .container { width:100%; max-width:1000px; background:#fff; border-radius:10px; box-shadow:0 4px 15px rgba(0,0,0,0.1); overflow:hidden;}
-  .header { background:#003366; color:#fff; padding:25px; text-align:center;}
-  .header h1 { margin:0; font-size:1.8em;}
-  .calculator-body { display:flex; flex-wrap:wrap; padding:25px;}
-  .inputs { width:100%; padding-bottom:25px; border-bottom:1px solid #e0e0e0; margin-bottom:25px;}
-  @media(min-width:600px){.inputs{width:35%; border-bottom:none; border-right:1px solid #e0e0e0; padding-right:25px; margin-bottom:0;}}
-  .outputs { width:100%;}
-  @media(min-width:600px){.outputs{width:65%; padding-left:25px;}}
-  .input-group { margin-bottom:20px;}
-  .input-group label { display:block; font-weight:600; margin-bottom:8px; color:#555;}
-  .input-group input, .input-group select { width:100%; padding:10px; border-radius:5px; border:1px solid #ccc; font-size:1em; box-sizing:border-box;}
-  .output-grid { display:grid; grid-template-columns:1fr 1fr; gap:15px;}
-  .output-card { background:#f8f9fa; border:1px solid #e9ecef; border-radius:8px; padding:15px; text-align:center;}
-  .output-card h3 { margin:0 0 8px; font-size:1em; color:#003366;}
-  .output-value { font-size:1.6em; font-weight:700; color:#0056b3;}
-  .deficit-red { color:red; font-weight:600;}
-  .summary-card { grid-column:1 / -1;}
-  .overall-card { background:#e6f7ff; border-color:#91d5ff;}
-  .overall-card .output-value { color:#003366;}
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+         background: #f4f7f9; color: #333; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+  .container { width: 100%; max-width: 1000px; background: #fff; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden; }
+  .header { background: #003366; color: #fff; padding: 25px; text-align: center; }
+  .header h1 { margin: 0; font-size: 1.8em; }
+  .calculator-body { display: flex; flex-wrap: wrap; padding: 25px; }
+  .inputs { width: 100%; padding-bottom: 25px; border-bottom: 1px solid #e0e0e0; margin-bottom: 25px; }
+  @media (min-width: 600px) { .inputs { width: 35%; border-bottom: none; border-right: 1px solid #e0e0e0; padding-right: 25px; margin-bottom: 0; } }
+  .outputs { width: 100%; }
+  @media (min-width: 600px) { .outputs { width: 65%; padding-left: 25px; } }
+  .input-group { margin-bottom: 20px; }
+  .input-group label { display: block; font-weight: 600; margin-bottom: 8px; color: #555; }
+  .input-group input, .input-group select { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 1em; box-sizing: border-box; }
+  .output-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+  .output-card { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; text-align: center; }
+  .output-card h3 { margin: 0 0 8px; font-size: 1em; color: #003366; }
+  .output-value { font-size: 1.6em; font-weight: 700; color: #0056b3; }
+  .deficit { font-size: 0.9em; margin-top: 4px; }
+  .deficit-red { color: #d93025; font-weight: 600; }
+  .deficit-green { color: #1e8e3e; font-weight: 600; }
+  .summary-card { grid-column: 1 / -1; }
+  .overall-card { background: #e6f7ff; border-color: #91d5ff; }
+  .overall-card .output-value { color: #003366; }
 </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
     <h1>Physician Performance & Safety Calculator</h1>
-    <p>Relative deficit shown vs 8h baseline.</p>
+    <p style="margin: 5px 0 0; opacity: 0.9;">Deficit values are relative to a well-rested (8h sleep) baseline.</p>
   </div>
   <div class="calculator-body">
     <div class="inputs">
       <h2>Your Inputs</h2>
       <div class="input-group">
         <label for="sleepHours">Hours of Sleep</label>
-        <input type="number" id="sleepHours" value="6.0" min="0" max="9" step="0.1" oninput="calculatePerformance()">
+        <input type="number" id="sleepHours" value="5.8" min="0" max="9" step="0.1" oninput="calculatePerformance()">
       </div>
       <div class="input-group">
         <label for="role">Role</label>
@@ -62,97 +64,115 @@
     <div class="outputs">
       <h2>Predicted Performance</h2>
       <div class="output-card summary-card overall-card">
-        <h3>Overall Performance</h3>
+        <h3>Overall Performance Score</h3>
         <div class="output-value" id="overallPerformance"></div>
-        <div id="overallDeficit"></div>
-        <div style="font-size:0.8em; margin-top:6px; color:#555;">
-          (~20% of performance is driven by lifestyle, diet, exercise, environment)
-        </div>
+        <div class="deficit" id="overallDeficit"></div>
       </div>
       <div class="output-grid">
-        <div class="output-card"><h3>Clinical Skill</h3><div class="output-value" id="clinicalOut"></div><div id="clinicalDef"></div></div>
-        <div class="output-card"><h3>Reaction Time</h3><div class="output-value" id="reactionOut"></div><div id="reactionDef"></div></div>
-        <div class="output-card"><h3>Attentional Lapses</h3><div class="output-value" id="lapsesOut"></div><div id="lapsesDef"></div></div>
-        <div class="output-card"><h3>Error Risk</h3><div class="output-value" id="errorOut"></div><div id="errorDef"></div></div>
-        <div class="output-card"><h3>Diagnostic Accuracy</h3><div class="output-value" id="diagOut"></div><div id="diagDef"></div></div>
-        <div class="output-card"><h3>Procedural Coordination</h3><div class="output-value" id="handOut"></div><div id="handDef"></div></div>
-        <div class="output-card"><h3>Burnout Risk</h3><div class="output-value" id="burnOut"></div><div id="burnDef"></div></div>
-        <div class="output-card"><h3>Mood Score</h3><div class="output-value" id="moodOut"></div><div id="moodDef"></div></div>
+        <div class="output-card"><h3>Clinical Skill</h3><div class="output-value" id="clinicalOut"></div><div class="deficit" id="clinicalDef"></div></div>
+        <div class="output-card"><h3>Reaction Time</h3><div class="output-value" id="reactionOut"></div><div class="deficit" id="reactionDef"></div></div>
+        <div class="output-card"><h3>Diagnostic Accuracy</h3><div class="output-value" id="diagOut"></div><div class="deficit" id="diagDef"></div></div>
+        <div class="output-card"><h3>Attentional Lapses</h3><div class="output-value" id="lapsesOut"></div><div class="deficit" id="lapsesDef"></div></div>
+        <div class="output-card"><h3>Error Risk</h3><div class="output-value" id="errorOut"></div><div class="deficit" id="errorDef"></div></div>
+        <div class="output-card"><h3>Burnout Risk</h3><div class="output-value" id="burnOut"></div><div class="deficit" id="burnDef"></div></div>
       </div>
-      <div class="output-card summary-card">
+       <div class="output-card summary-card" style="margin-top: 15px;">
         <h3>Cognitive State Equivalent</h3>
-        <div id="equivalenceOut" style="font-weight:600;"></div>
+        <div id="equivalenceOut" style="font-weight:600; font-size: 1.1em; color: #d93025;"></div>
       </div>
     </div>
   </div>
 </div>
 
 <script>
+function getPerformanceMetrics(hours, role, spec) {
+  const debt = Math.max(0, 8 - hours);
+  const debtSq = debt * debt;
+
+  // Parameters from the final Stata model (using literature means)
+  const p = {
+    rt: 32, clin: -3, diag: -2.5, err: 0.11, burn: 0.25, mood: -2, lap_quad: 0.05
+  };
+
+  // --- 1. Calculate Raw Scores (mirroring Stata 'gen' commands) ---
+  let raw_rt = 280 + (p.rt + (role === 3 ? -2 : 0) + (spec === 1 ? 4 : 0)) * debt + 1 * debtSq;
+  let raw_clin = 95 + (p.clin + (spec === 2 ? -1 : 0) + (role === 1 ? -0.5 : 0) + (role === 3 ? 1 : 0)) * debt - 0.2 * debtSq;
+  let raw_diag = 90 + (p.diag + (role === 1 ? -0.5 : 0) + (role === 3 ? 0.5 : 0)) * debt - 0.3 * debtSq;
+  
+  let raw_laps_lambda = Math.exp(-1 + 0.25 * debt + p.lap_quad * debtSq); // Expected lapses
+  let raw_err_prob = 1 / (1 + Math.exp(-(-2.94 + p.err * debt + 0.01 * debtSq)));
+  let raw_burn_prob = 1 / (1 + Math.exp(-(-1.95 + p.burn * debt)));
+  
+  // --- 2. Normalize Scores (mirroring Stata normalization) ---
+  const lapmaxFixed = 30; // Pre-calculated 99th percentile for stable scaling
+
+  let norm_rt = (600 - raw_rt) / (600 - 200) * 100;
+  let norm_clin = (raw_clin - 60) / (100 - 60) * 100;
+  let norm_diag = (raw_diag - 70) / 30 * 100;
+  let norm_laps = (lapmaxFixed - raw_laps_lambda) / lapmaxFixed * 100;
+
+  // Bound scores between 0 and 100
+  norm_rt = Math.max(0, Math.min(100, norm_rt));
+  norm_clin = Math.max(0, Math.min(100, norm_clin));
+  norm_diag = Math.max(0, Math.min(100, norm_diag));
+  norm_laps = Math.max(0, Math.min(100, norm_laps));
+  
+  // --- 3. Calculate Composite Score ---
+  const overall_score = (norm_clin + norm_rt + norm_laps + norm_diag) / 4;
+
+  return {
+    overall: overall_score,
+    clin: norm_clin,
+    rt: raw_rt, // Return raw for display
+    diag: norm_diag,
+    lapses: raw_laps_lambda, // Return raw for display
+    error: raw_err_prob, // Return probability
+    burnout: raw_burn_prob // Return probability
+  };
+}
+
 function calculatePerformance() {
-  let hours=parseFloat(document.getElementById("sleepHours").value);
-  let role=parseInt(document.getElementById("role").value);
-  let spec=parseInt(document.getElementById("specialty").value);
-  let debt=Math.max(0,8-hours);
+  const hours = parseFloat(document.getElementById("sleepHours").value);
+  const role = parseInt(document.getElementById("role").value);
+  const spec = parseInt(document.getElementById("specialty").value);
 
-  // Baselines
-  let baseClin=95, baseRT=280, baseLaps=1, baseErr=1/(1+Math.exp(3)), 
-      baseDiag=90, baseHand=90, baseMood=80, baseBurn=1/(1+Math.exp(2)), baseOverall=80.4;
+  const actual = getPerformanceMetrics(hours, role, spec);
+  const baseline = getPerformanceMetrics(8, role, spec); // 8h sleep for baseline
 
-  // Metrics
-  let clin=95-3*debt; if(spec===2)clin-=2; if(role===1)clin-=1.5; if(role===3)clin+=1;
-  let rt=280+32*debt; if(spec===1)rt+=15; if(role===3)rt-=10;
-  let laps=0.5+0.4*Math.pow(debt,2);
-  let err=1/(1+Math.exp(-(-3+Math.log(1.12)*debt)));
-  let diag=90-2.5*debt;
-  let hand=90-2*debt;
-  let mood=80-2*debt;
-  let burn=1/(1+Math.exp(-(-2+0.25*debt)));
-  let overall=baseOverall+(-8.85*debt);
-
-  function rel(val,base,lowerIsBetter=false){
-    let diff=((val-base)/base*100);
-    let sign = diff>0? "+" : "";
-    let txt=`${sign}${diff.toFixed(1)}%`;
-    if((lowerIsBetter && val>base) || (!lowerIsBetter && val<base)) return `<span class="deficit-red">${txt}</span>`;
-    return txt;
+  function formatDeficit(actualVal, baseVal, lowerIsBetter = false) {
+    const diff = actualVal - baseVal;
+    if (Math.abs(diff) < 0.05) return `(Baseline)`;
+    
+    let sign = diff > 0 ? "+" : "";
+    let cls = (lowerIsBetter && diff > 0) || (!lowerIsBetter && diff < 0) ? "deficit-red" : "deficit-green";
+    
+    let unit = lowerIsBetter ? "" : " pts";
+    if (lowerIsBetter && actualVal > 100) unit = " ms"; // for RT
+    
+    return `(<span class="${cls}">${sign}${diff.toFixed(1)}${unit}</span>)`;
   }
 
   // Update outputs
-  document.getElementById("overallPerformance").innerText=overall.toFixed(1);
-  document.getElementById("overallDeficit").innerHTML=rel(overall,baseOverall,false);
+  document.getElementById("overallPerformance").innerText = actual.overall.toFixed(1);
+  document.getElementById("overallDeficit").innerHTML = formatDeficit(actual.overall, baseline.overall);
 
-  document.getElementById("clinicalOut").innerText=clin.toFixed(1);
-  document.getElementById("clinicalDef").innerHTML=rel(clin,baseClin,false);
+  document.getElementById("clinicalOut").innerText = actual.clin.toFixed(1);
+  document.getElementById("clinicalDef").innerHTML = formatDeficit(actual.clin, baseline.clin);
+  
+  document.getElementById("reactionOut").innerText = actual.rt.toFixed(0) + " ms";
+  document.getElementById("reactionDef").innerHTML = formatDeficit(actual.rt, baseline.rt, true);
 
-  document.getElementById("reactionOut").innerText=rt.toFixed(0)+" ms";
-  document.getElementById("reactionDef").innerHTML=rel(rt,baseRT,true);
+  document.getElementById("diagOut").innerText = actual.diag.toFixed(1);
+  document.getElementById("diagDef").innerHTML = formatDeficit(actual.diag, baseline.diag);
 
-  document.getElementById("lapsesOut").innerText=laps.toFixed(1);
-  document.getElementById("lapsesDef").innerHTML=rel(laps,baseLaps,true);
+  document.getElementById("lapsesOut").innerText = actual.lapses.toFixed(1);
+  document.getElementById("lapsesDef").innerHTML = formatDeficit(actual.lapses, baseline.lapses, true);
 
-  document.getElementById("errorOut").innerText=(err*100).toFixed(1)+"%";
-  document.getElementById("errorDef").innerHTML=rel(err,baseErr,true);
+  document.getElementById("errorOut").innerText = (actual.error * 100).toFixed(1) + "%";
+  document.getElementById("errorDef").innerHTML = formatDeficit(actual.error, baseline.error, true);
+  
+  document.getElementById("burnOut").innerText = (actual.burnout * 100).toFixed(1) + "%";
+  document.getElementById("burnDef").innerHTML = formatDeficit(actual.burnout, baseline.burnout, true);
 
-  document.getElementById("diagOut").innerText=diag.toFixed(1);
-  document.getElementById("diagDef").innerHTML=rel(diag,baseDiag,false);
-
-  document.getElementById("handOut").innerText=hand.toFixed(1);
-  document.getElementById("handDef").innerHTML=rel(hand,baseHand,false);
-
-  document.getElementById("moodOut").innerText=mood.toFixed(1);
-  document.getElementById("moodDef").innerHTML=rel(mood,baseMood,false);
-
-  document.getElementById("burnOut").innerText=(burn*100).toFixed(1)+"%";
-  document.getElementById("burnDef").innerHTML=rel(burn,baseBurn,true);
-
-// Cognitive state equivalence tied to reaction time
-  let eq="Comparable to rested state";
-  if(rt >= 360 && rt < 450) eq="≈BAC 0.05% (Minor Impairment)";
-  if(rt >= 450 && rt < 500) eq="≈BAC 0.08% (Legally Impaired)";
-  if(rt >= 500) eq=">BAC 0.10% (Severe Impairment)";
-  document.getElementById("equivalenceOut").innerText=eq;
-}
-window.onload=calculatePerformance;
-</script>
-</body>
-</html>
+  // Cognitive state equivalence
+  let eq = "
