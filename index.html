@@ -85,74 +85,72 @@
 </div>
 
 <script>
-function getPerformanceMetrics(hours, role, spec) {
-  const debt = Math.max(0, 8 - hours);
-  const debtSq = debt * debt;
-
-  // Parameters from the final Stata model (using literature means)
-  const p = {
-    rt: 32, clin: -3, diag: -2.5, err: 0.11, burn: 0.25, mood: -2, lap_quad: 0.05
-  };
-
-  // --- 1. Calculate Raw Scores (mirroring Stata 'gen' commands) ---
-  let raw_rt = 280 + (p.rt + (role === 3 ? -2 : 0) + (spec === 1 ? 4 : 0)) * debt + 1 * debtSq;
-  let raw_clin = 95 + (p.clin + (spec === 2 ? -1 : 0) + (role === 1 ? -0.5 : 0) + (role === 3 ? 1 : 0)) * debt - 0.2 * debtSq;
-  let raw_diag = 90 + (p.diag + (role === 1 ? -0.5 : 0) + (role === 3 ? 0.5 : 0)) * debt - 0.3 * debtSq;
-  
-  let raw_laps_lambda = Math.exp(-1 + 0.25 * debt + p.lap_quad * debtSq); // Expected lapses
-  let raw_err_prob = 1 / (1 + Math.exp(-(-2.94 + p.err * debt + 0.01 * debtSq)));
-  let raw_burn_prob = 1 / (1 + Math.exp(-(-1.95 + p.burn * debt)));
-  
-  // --- 2. Normalize Scores (mirroring Stata normalization) ---
-  const lapmaxFixed = 30; // Pre-calculated 99th percentile for stable scaling
-
-  let norm_rt = (600 - raw_rt) / (600 - 200) * 100;
-  let norm_clin = (raw_clin - 60) / (100 - 60) * 100;
-  let norm_diag = (raw_diag - 70) / 30 * 100;
-  let norm_laps = (lapmaxFixed - raw_laps_lambda) / lapmaxFixed * 100;
-
-  // Bound scores between 0 and 100
-  norm_rt = Math.max(0, Math.min(100, norm_rt));
-  norm_clin = Math.max(0, Math.min(100, norm_clin));
-  norm_diag = Math.max(0, Math.min(100, norm_diag));
-  norm_laps = Math.max(0, Math.min(100, norm_laps));
-  
-  // --- 3. Calculate Composite Score ---
-  const overall_score = (norm_clin + norm_rt + norm_laps + norm_diag) / 4;
-
-  return {
-    overall: overall_score,
-    clin: norm_clin,
-    rt: raw_rt, // Return raw for display
-    diag: norm_diag,
-    lapses: raw_laps_lambda, // Return raw for display
-    error: raw_err_prob, // Return probability
-    burnout: raw_burn_prob // Return probability
-  };
-}
-
+// This is the single function that runs everything.
 function calculatePerformance() {
+  
+  // --- 1. READ INPUTS ---
   const hours = parseFloat(document.getElementById("sleepHours").value);
   const role = parseInt(document.getElementById("role").value);
   const spec = parseInt(document.getElementById("specialty").value);
 
-  const actual = getPerformanceMetrics(hours, role, spec);
-  const baseline = getPerformanceMetrics(8, role, spec); // 8h sleep for baseline
+  // --- 2. DEFINE MODEL PARAMETERS ---
+  const p = {
+    rt: 32, clin: -3, diag: -2.5, err: 0.11, burn: 0.25, mood: -2, lap_quad: 0.05
+  };
+  const lapmaxFixed = 30; // Pre-calculated 99th percentile for stable scaling
 
-  function formatDeficit(actualVal, baseVal, lowerIsBetter = false) {
-    const diff = actualVal - baseVal;
-    if (Math.abs(diff) < 0.05) return `(Baseline)`;
+  // --- 3. CALCULATE METRICS FOR BOTH ACTUAL & BASELINE STATES ---
+  // This helper function contains all the core math.
+  const getMetrics = (currentHours) => {
+    const debt = Math.max(0, 8 - currentHours);
+    const debtSq = debt * debt;
+
+    // Calculate raw scores
+    const raw_rt = 280 + (p.rt + (role === 3 ? -2 : 0) + (spec === 1 ? 4 : 0)) * debt + 1 * debtSq;
+    const raw_clin = 95 + (p.clin + (spec === 2 ? -1 : 0) + (role === 1 ? -0.5 : 0) + (role === 3 ? 1 : 0)) * debt - 0.2 * debtSq;
+    const raw_diag = 90 + (p.diag + (role === 1 ? -0.5 : 0) + (role === 3 ? 0.5 : 0)) * debt - 0.3 * debtSq;
+    const raw_laps_lambda = Math.exp(-1 + 0.25 * debt + p.lap_quad * debtSq);
+    const raw_err_prob = 1 / (1 + Math.exp(-(-2.94 + p.err * debt + 0.01 * debtSq)));
+    const raw_burn_prob = 1 / (1 + Math.exp(-(-1.95 + p.burn * debt)));
+
+    // Normalize scores
+    let norm_rt = (600 - raw_rt) / (600 - 200) * 100;
+    let norm_clin = (raw_clin - 60) / (100 - 60) * 100;
+    let norm_diag = (raw_diag - 70) / 30 * 100;
+    let norm_laps = (lapmaxFixed - raw_laps_lambda) / lapmaxFixed * 100;
     
-    let sign = diff > 0 ? "+" : "";
-    let cls = (lowerIsBetter && diff > 0) || (!lowerIsBetter && diff < 0) ? "deficit-red" : "deficit-green";
+    // Bound scores between 0 and 100
+    norm_rt = Math.max(0, Math.min(100, norm_rt));
+    norm_clin = Math.max(0, Math.min(100, norm_clin));
+    norm_diag = Math.max(0, Math.min(100, norm_diag));
+    norm_laps = Math.max(0, Math.min(100, norm_laps));
+
+    const overall_score = (norm_clin + norm_rt + norm_laps + norm_diag) / 4;
+
+    return { overall: overall_score, clin: norm_clin, rt: raw_rt, diag: norm_diag, lapses: raw_laps_lambda, error: raw_err_prob, burnout: raw_burn_prob };
+  };
+
+  const actual = getMetrics(hours);
+  const baseline = getMetrics(8); // Baseline is always 8 hours of sleep
+
+  // --- 4. UPDATE THE DISPLAY ---
+  const formatDeficit = (actualVal, baseVal, lowerIsBetter = false, isProb = false) => {
+    let diff = actualVal - baseVal;
+    if (isProb) diff *= 100; // Convert probability difference to percentage points
     
-    let unit = lowerIsBetter ? "" : " pts";
-    if (lowerIsBetter && actualVal > 100) unit = " ms"; // for RT
+    if (Math.abs(diff) < (isProb ? 0.1 : 0.05)) return `(Baseline)`;
     
+    const sign = diff > 0 ? "+" : "";
+    const cls = (lowerIsBetter && diff > 0) || (!lowerIsBetter && diff < 0) ? "deficit-red" : "deficit-green";
+    
+    let unit = " pts";
+    if (isProb) unit = " pp"; // percentage points
+    else if (lowerIsBetter && actualVal < 1) unit = "";
+    else if (lowerIsBetter) unit = " ms";
+        
     return `(<span class="${cls}">${sign}${diff.toFixed(1)}${unit}</span>)`;
-  }
+  };
 
-  // Update outputs
   document.getElementById("overallPerformance").innerText = actual.overall.toFixed(1);
   document.getElementById("overallDeficit").innerHTML = formatDeficit(actual.overall, baseline.overall);
 
@@ -169,10 +167,21 @@ function calculatePerformance() {
   document.getElementById("lapsesDef").innerHTML = formatDeficit(actual.lapses, baseline.lapses, true);
 
   document.getElementById("errorOut").innerText = (actual.error * 100).toFixed(1) + "%";
-  document.getElementById("errorDef").innerHTML = formatDeficit(actual.error, baseline.error, true);
+  document.getElementById("errorDef").innerHTML = formatDeficit(actual.error, baseline.error, true, true);
   
   document.getElementById("burnOut").innerText = (actual.burnout * 100).toFixed(1) + "%";
-  document.getElementById("burnDef").innerHTML = formatDeficit(actual.burnout, baseline.burnout, true);
+  document.getElementById("burnDef").innerHTML = formatDeficit(actual.burnout, baseline.burnout, true, true);
 
   // Cognitive state equivalence
-  let eq = "
+  let eq = "Comparable to a rested, sober state";
+  if (actual.rt >= 360 && actual.rt < 450) eq = "≈BAC 0.05% (Minor Impairment)";
+  if (actual.rt >= 450 && actual.rt < 500) eq = "≈BAC 0.08% (Legally Impaired for Driving)";
+  if (actual.rt >= 500) eq = ">BAC 0.10% (Severe Impairment)";
+  document.getElementById("equivalenceOut").innerText = eq;
+}
+
+// Run the calculation once on page load.
+window.onload = calculatePerformance;
+</script>
+</body>
+</html>
