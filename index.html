@@ -39,12 +39,12 @@ function calculatePerformance() {
 
     const overall_score = (norm_clin + norm_rt + norm_laps + norm_diag) / 4;
 
-    // *** CHANGE 1: Return the raw scores for clin and diag as well ***
+    // Return all necessary metrics, including the raw scores for clearer display
     return { 
       overall: overall_score, 
-      clin: norm_clin, raw_clin: raw_clin, 
+      raw_clin: raw_clin, 
       rt: raw_rt, 
-      diag: norm_diag, raw_diag: raw_diag, 
+      raw_diag: raw_diag, 
       lapses: raw_laps_lambda, 
       error: raw_err_prob, 
       burnout: raw_burn_prob 
@@ -85,7 +85,7 @@ function calculatePerformance() {
     return `(<span class="${cls}">${sign}${diff.toFixed(1)}${unit}</span>)`;
   };
 
-  // *** CHANGE 2: Update display to use raw_clin and raw_diag ***
+  // Update display to use the more intuitive raw scores
   document.getElementById("clinicalOut").innerText = actual.raw_clin.toFixed(1) + "/100";
   document.getElementById("clinicalDef").innerHTML = formatDeficit(actual.raw_clin, baseline.raw_clin);
   
