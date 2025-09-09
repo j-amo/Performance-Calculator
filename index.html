@@ -34,7 +34,7 @@
 <div class="container">
   <div class="header">
     <h1>Physician Performance & Safety Calculator</h1>
-    <p style="margin: 5px 0 0; opacity: 0.9;">Deficit values are relative to a well-rested (8h sleep) baseline.</p>
+    <p style="margin: 5px 0 0; opacity: 0.9;">Performance is shown as a percentage of a well-rested (8h sleep) baseline.</p>
   </div>
   <div class="calculator-body">
     <div class="inputs">
@@ -64,7 +64,7 @@
     <div class="outputs">
       <h2>Predicted Performance</h2>
       <div class="output-card summary-card overall-card">
-        <h3>Overall Performance Score</h3>
+        <h3>Overall Performance (% of Baseline)</h3>
         <div class="output-value" id="overallPerformance"></div>
         <div class="deficit" id="overallDeficit"></div>
       </div>
@@ -76,7 +76,7 @@
         <div class="output-card"><h3>Error Risk</h3><div class="output-value" id="errorOut"></div><div class="deficit" id="errorDef"></div></div>
         <div class="output-card"><h3>Burnout Risk</h3><div class="output-value" id="burnOut"></div><div class="deficit" id="burnDef"></div></div>
       </div>
-       <div class="output-card summary-card" style="margin-top: 15px;">
+        <div class="output-card summary-card" style="margin-top: 15px;">
         <h3>Cognitive State Equivalent</h3>
         <div id="equivalenceOut" style="font-weight:600; font-size: 1.1em; color: #d93025;"></div>
       </div>
@@ -93,7 +93,7 @@ function calculatePerformance() {
   const role = parseInt(document.getElementById("role").value);
   const spec = parseInt(document.getElementById("specialty").value);
 
-  // --- 2. DEFINE MODEL PARAMETERS ---
+  // --- 2. DEFINE MODEL PARAMETERS (from Stata simulation) ---
   const p = {
     rt: 32, clin: -3, diag: -2.5, err: 0.11, burn: 0.25, mood: -2, lap_quad: 0.05
   };
@@ -113,7 +113,7 @@ function calculatePerformance() {
     const raw_err_prob = 1 / (1 + Math.exp(-(-2.94 + p.err * debt + 0.01 * debtSq)));
     const raw_burn_prob = 1 / (1 + Math.exp(-(-1.95 + p.burn * debt)));
 
-    // Normalize scores
+    // Normalize scores to a common 0-100 scale to create the composite
     let norm_rt = (600 - raw_rt) / (600 - 200) * 100;
     let norm_clin = (raw_clin - 60) / (100 - 60) * 100;
     let norm_diag = (raw_diag - 70) / 30 * 100;
@@ -127,6 +127,7 @@ function calculatePerformance() {
 
     const overall_score = (norm_clin + norm_rt + norm_laps + norm_diag) / 4;
 
+    // Return both the composite score and the individual metrics for display
     return { overall: overall_score, clin: norm_clin, rt: raw_rt, diag: norm_diag, lapses: raw_laps_lambda, error: raw_err_prob, burnout: raw_burn_prob };
   };
 
@@ -134,6 +135,20 @@ function calculatePerformance() {
   const baseline = getMetrics(8); // Baseline is always 8 hours of sleep
 
   // --- 4. UPDATE THE DISPLAY ---
+  
+  // A. Handle the main Overall Performance score (as a percentage of baseline)
+  const overallPercent = (actual.overall / baseline.overall) * 100;
+  const overallDeficitVal = overallPercent - 100;
+  
+  document.getElementById("overallPerformance").innerText = overallPercent.toFixed(1) + "%";
+  
+  let overallDeficitHTML = `(Rested Baseline)`;
+  if (Math.abs(overallDeficitVal) > 0.1) {
+    overallDeficitHTML = `(<span class="deficit-red">${overallDeficitVal.toFixed(1)} pp from baseline</span>)`;
+  }
+  document.getElementById("overallDeficit").innerHTML = overallDeficitHTML;
+
+  // B. Handle the individual component metrics
   const formatDeficit = (actualVal, baseVal, lowerIsBetter = false, isProb = false) => {
     let diff = actualVal - baseVal;
     if (isProb) diff *= 100; // Convert probability difference to percentage points
@@ -145,14 +160,10 @@ function calculatePerformance() {
     
     let unit = " pts";
     if (isProb) unit = " pp"; // percentage points
-    else if (lowerIsBetter && actualVal < 1) unit = "";
     else if (lowerIsBetter) unit = " ms";
         
     return `(<span class="${cls}">${sign}${diff.toFixed(1)}${unit}</span>)`;
   };
-
-  document.getElementById("overallPerformance").innerText = actual.overall.toFixed(1);
-  document.getElementById("overallDeficit").innerHTML = formatDeficit(actual.overall, baseline.overall);
 
   document.getElementById("clinicalOut").innerText = actual.clin.toFixed(1);
   document.getElementById("clinicalDef").innerHTML = formatDeficit(actual.clin, baseline.clin);
@@ -172,7 +183,7 @@ function calculatePerformance() {
   document.getElementById("burnOut").innerText = (actual.burnout * 100).toFixed(1) + "%";
   document.getElementById("burnDef").innerHTML = formatDeficit(actual.burnout, baseline.burnout, true, true);
 
-  // Cognitive state equivalence
+  // C. Cognitive state equivalence
   let eq = "Comparable to a rested, sober state";
   if (actual.rt >= 360 && actual.rt < 450) eq = "≈BAC 0.05% (Minor Impairment)";
   if (actual.rt >= 450 && actual.rt < 500) eq = "≈BAC 0.08% (Legally Impaired for Driving)";
