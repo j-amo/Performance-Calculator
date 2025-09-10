@@ -1,117 +1,120 @@
-<script>
-// This is the single function that runs everything.
 function calculatePerformance() {
-  
-  // --- 1. READ INPUTS ---
-  const hours = parseFloat(document.getElementById("sleepHours").value);
-  const role = parseInt(document.getElementById("role").value);
-  const spec = parseInt(document.getElementById("specialty").value);
-
-  // --- 2. DEFINE MODEL PARAMETERS (from Stata simulation) ---
-  const p = {
-    rt: 32, clin: -3, diag: -2.5, err: 0.11, burn: 0.25, mood: -2, lap_quad: 0.05
-  };
-  const lapmaxFixed = 30; // Pre-calculated 99th percentile for stable scaling
-
-  // --- 3. CALCULATE METRICS FOR BOTH ACTUAL & BASELINE STATES ---
-  const getMetrics = (currentHours) => {
-    const debt = Math.max(0, 8 - currentHours);
-    const debtSq = debt * debt;
-
-    // Calculate raw scores
-    const raw_rt = 280 + (p.rt + (role === 3 ? -2 : 0) + (spec === 1 ? 4 : 0)) * debt + 1 * debtSq;
-    const raw_clin = 95 + (p.clin + (spec === 2 ? -1 : 0) + (role === 1 ? -0.5 : 0) + (role === 3 ? 1 : 0)) * debt - 0.2 * debtSq;
-    const raw_diag = 90 + (p.diag + (role === 1 ? -0.5 : 0) + (role === 3 ? 0.5 : 0)) * debt - 0.3 * debtSq;
-    const raw_laps_lambda = Math.exp(-1 + 0.25 * debt + p.lap_quad * debtSq);
-    const raw_err_prob = 1 / (1 + Math.exp(-(-2.94 + p.err * debt + 0.01 * debtSq)));
-    const raw_burn_prob = 1 / (1 + Math.exp(-(-1.95 + p.burn * debt)));
-
-    // Normalize scores for the composite
-    let norm_rt = (600 - raw_rt) / (600 - 200) * 100;
-    let norm_clin = (raw_clin - 60) / (100 - 60) * 100;
-    let norm_diag = (raw_diag - 70) / 30 * 100;
-    let norm_laps = (lapmaxFixed - raw_laps_lambda) / lapmaxFixed * 100;
+    const sleepHours = parseFloat(document.getElementById('sleepHours').value);
+    const role = document.getElementById('role').value;
     
-    norm_rt = Math.max(0, Math.min(100, norm_rt));
-    norm_clin = Math.max(0, Math.min(100, norm_clin));
-    norm_diag = Math.max(0, Math.min(100, norm_diag));
-    norm_laps = Math.max(0, Math.min(100, norm_laps));
-
-    const overall_score = (norm_clin + norm_rt + norm_laps + norm_diag) / 4;
-
-    // Return all necessary metrics, including the raw scores for clearer display
-    return { 
-      overall: overall_score, 
-      raw_clin: raw_clin, 
-      rt: raw_rt, 
-      raw_diag: raw_diag, 
-      lapses: raw_laps_lambda, 
-      error: raw_err_prob, 
-      burnout: raw_burn_prob 
-    };
-  };
-
-  const actual = getMetrics(hours);
-  const baseline = getMetrics(8);
-
-  // --- 4. UPDATE THE DISPLAY ---
-  
-  // A. Handle the Overall Performance score
-  const overallPercent = (actual.overall / baseline.overall) * 100;
-  const overallDeficitVal = overallPercent - 100;
-  
-  document.getElementById("overallPerformance").innerText = overallPercent.toFixed(1) + "%";
-  
-  let overallDeficitHTML = `(Rested Baseline)`;
-  if (Math.abs(overallDeficitVal) > 0.1) {
-    overallDeficitHTML = `(<span class="deficit-red">${overallDeficitVal.toFixed(1)} pp from baseline</span>)`;
-  }
-  document.getElementById("overallDeficit").innerHTML = overallDeficitHTML;
-
-  // B. Handle the individual component metrics
-  const formatDeficit = (actualVal, baseVal, lowerIsBetter = false, isProb = false) => {
-    let diff = actualVal - baseVal;
-    if (isProb) diff *= 100;
+    if (!sleepHours || sleepHours < 0 || sleepHours > 12) {
+        alert('Please enter a valid sleep duration between 0 and 12 hours.');
+        return;
+    }
     
-    if (Math.abs(diff) < (isProb ? 0.1 : 0.05)) return `(Baseline)`;
+    if (!role) {
+        alert('Please select your role/experience level.');
+        return;
+    }
     
-    const sign = diff > 0 ? "+" : "";
-    const cls = (lowerIsBetter && diff > 0) || (!lowerIsBetter && diff < 0) ? "deficit-red" : "deficit-green";
+    // Calculate sleep debt (capped at 0 for >8 hours)
+    const sleepDebt = Math.max(0, 8 - sleepHours);
     
-    let unit = " pts";
-    if (isProb) unit = " pp";
-    else if (lowerIsBetter) unit = " ms";
-        
-    return `(<span class="${cls}">${sign}${diff.toFixed(1)}${unit}</span>)`;
-  };
-
-  // Update display to use the more intuitive raw scores
-  document.getElementById("clinicalOut").innerText = actual.raw_clin.toFixed(1) + "/100";
-  document.getElementById("clinicalDef").innerHTML = formatDeficit(actual.raw_clin, baseline.raw_clin);
-  
-  document.getElementById("reactionOut").innerText = actual.rt.toFixed(0) + " ms";
-  document.getElementById("reactionDef").innerHTML = formatDeficit(actual.rt, baseline.rt, true);
-
-  document.getElementById("diagOut").innerText = actual.raw_diag.toFixed(1) + "/100";
-  document.getElementById("diagDef").innerHTML = formatDeficit(actual.raw_diag, baseline.raw_diag);
-
-  document.getElementById("lapsesOut").innerText = actual.lapses.toFixed(1);
-  document.getElementById("lapsesDef").innerHTML = formatDeficit(actual.lapses, baseline.lapses, true);
-
-  document.getElementById("errorOut").innerText = (actual.error * 100).toFixed(1) + "%";
-  document.getElementById("errorDef").innerHTML = formatDeficit(actual.error, baseline.error, true, true);
-  
-  document.getElementById("burnOut").innerText = (actual.burnout * 100).toFixed(1) + "%";
-  document.getElementById("burnDef").innerHTML = formatDeficit(actual.burnout, baseline.burnout, true, true);
-
-  // C. Cognitive state equivalence
-  let eq = "Comparable to a rested, sober state";
-  if (actual.rt >= 360 && actual.rt < 450) eq = "≈BAC 0.05% (Minor Impairment)";
-  if (actual.rt >= 450 && actual.rt < 500) eq = "≈BAC 0.08% (Legally Impaired for Driving)";
-  if (actual.rt >= 500) eq = ">BAC 0.10% (Severe Impairment)";
-  document.getElementById("equivalenceOut").innerText = eq;
+    // Role modifiers (from your model)
+    let rtModifier = 0;
+    let diagModifier = 0;
+    let clinModifier = 0;
+    
+    if (role === 'resident') {
+        rtModifier = 2;
+    } else if (role === 'attending') {
+        rtModifier = -2;
+        diagModifier = -0.5;
+        clinModifier = -1.0;
+    } else if (role === 'student') {
+        diagModifier = 0.5;
+        clinModifier = 0.5;
+    }
+    
+    // Calculate raw performance metrics (from your model)
+    const rt_current = 280 + (32 + rtModifier) * sleepDebt + 1 * sleepDebt * sleepDebt;
+    const diag_current = 90 - (2.5 + diagModifier) * sleepDebt - 0.3 * sleepDebt * sleepDebt;
+    const clin_current = 95 - (3 + clinModifier) * sleepDebt - 0.2 * sleepDebt * sleepDebt;
+    const hand_current = 90 - 2 * sleepDebt - 0.2 * sleepDebt * sleepDebt;
+    
+    // Calculate BASELINE values (at 8 hours sleep, debt = 0)
+    const rt_baseline = 280 + (32 + rtModifier) * 0 + 1 * 0 * 0;  // = 280
+    const diag_baseline = 90 - (2.5 + diagModifier) * 0 - 0.3 * 0 * 0;  // = 90
+    const clin_baseline = 95 - (3 + clinModifier) * 0 - 0.2 * 0 * 0;   // = 95
+    const hand_baseline = 90 - 2 * 0 - 0.2 * 0 * 0;  // = 90
+    
+    // Simulate attention lapses (simplified)
+    const laps_current = Math.exp(-1 + 0.25 * sleepDebt + 0.05 * sleepDebt * sleepDebt);
+    const laps_baseline = Math.exp(-1 + 0.25 * 0 + 0.05 * 0 * 0);  // = exp(-1) ≈ 0.37
+    
+    // Calculate percentage of baseline (100% = baseline performance)
+    // For RT: lower is better, so we invert the calculation
+    const norm_rt = Math.max(0, Math.min(120, (rt_baseline / rt_current) * 100));
+    const norm_clin = Math.max(0, Math.min(120, (clin_current / clin_baseline) * 100));
+    const norm_diag = Math.max(0, Math.min(120, (diag_current / diag_baseline) * 100));
+    const norm_hand = Math.max(0, Math.min(120, (hand_current / hand_baseline) * 100));
+    const norm_laps = Math.max(0, Math.min(120, (laps_baseline / laps_current) * 100));
+    
+    // Calculate overall performance (your base composite weights)
+    const overall = 0.40 * norm_clin + 0.25 * norm_rt + 0.15 * norm_laps + 0.10 * norm_diag + 0.10 * norm_hand;
+    
+    // Display results
+    displayResults(overall, norm_rt, norm_clin, norm_diag, norm_laps, norm_hand, sleepHours);
 }
 
-// Run the calculation once on page load.
-window.onload = calculatePerformance;
-</script>
+function displayResults(overall, rt, clin, diag, laps, hand, sleepHours) {
+    document.getElementById('results').classList.remove('hidden');
+    
+    // Overall score
+    const scoreElement = document.getElementById('overallScore');
+    const scoreValue = document.getElementById('scoreValue');
+    const scoreDescription = document.getElementById('scoreDescription');
+    
+    scoreValue.textContent = Math.round(overall) + '%';
+    
+    // Color coding and descriptions
+    if (overall >= 95) {
+        scoreElement.className = 'overall-score score-excellent';
+        scoreDescription.textContent = 'Optimal Performance';
+    } else if (overall >= 85) {
+        scoreElement.className = 'overall-score score-good';
+        scoreDescription.textContent = 'Good Performance';
+    } else if (overall >= 70) {
+        scoreElement.className = 'overall-score score-concerning';
+        scoreDescription.textContent = 'Impaired Performance';
+    } else {
+        scoreElement.className = 'overall-score score-critical';
+        scoreDescription.textContent = 'Severely Impaired';
+    }
+    
+    // Individual metrics with color coding
+    const metrics = [
+        {id: 'rtScore', value: rt},
+        {id: 'clinScore', value: clin},
+        {id: 'diagScore', value: diag},
+        {id: 'lapsScore', value: laps},
+        {id: 'handScore', value: hand}
+    ];
+    
+    metrics.forEach(metric => {
+        const element = document.getElementById(metric.id);
+        element.textContent = Math.round(metric.value) + '%';
+        
+        // Color coding based on performance vs baseline
+        if (metric.value >= 100) {
+            element.className = 'metric-value above-baseline';
+        } else if (metric.value >= 90) {
+            element.className = 'metric-value';
+        } else {
+            element.className = 'metric-value below-baseline';
+        }
+    });
+    
+    // Warning for low performance
+    const warningBox = document.getElementById('warningBox');
+    if (overall < 85 || sleepHours < 6) {
+        warningBox.classList.remove('hidden');
+    } else {
+        warningBox.classList.add('hidden');
+    }
+}
