@@ -1,120 +1,364 @@
-function calculatePerformance() {
-    const sleepHours = parseFloat(document.getElementById('sleepHours').value);
-    const role = document.getElementById('role').value;
-    
-    if (!sleepHours || sleepHours < 0 || sleepHours > 12) {
-        alert('Please enter a valid sleep duration between 0 and 12 hours.');
-        return;
-    }
-    
-    if (!role) {
-        alert('Please select your role/experience level.');
-        return;
-    }
-    
-    // Calculate sleep debt (capped at 0 for >8 hours)
-    const sleepDebt = Math.max(0, 8 - sleepHours);
-    
-    // Role modifiers (from your model)
-    let rtModifier = 0;
-    let diagModifier = 0;
-    let clinModifier = 0;
-    
-    if (role === 'resident') {
-        rtModifier = 2;
-    } else if (role === 'attending') {
-        rtModifier = -2;
-        diagModifier = -0.5;
-        clinModifier = -1.0;
-    } else if (role === 'student') {
-        diagModifier = 0.5;
-        clinModifier = 0.5;
-    }
-    
-    // Calculate raw performance metrics (from your model)
-    const rt_current = 280 + (32 + rtModifier) * sleepDebt + 1 * sleepDebt * sleepDebt;
-    const diag_current = 90 - (2.5 + diagModifier) * sleepDebt - 0.3 * sleepDebt * sleepDebt;
-    const clin_current = 95 - (3 + clinModifier) * sleepDebt - 0.2 * sleepDebt * sleepDebt;
-    const hand_current = 90 - 2 * sleepDebt - 0.2 * sleepDebt * sleepDebt;
-    
-    // Calculate BASELINE values (at 8 hours sleep, debt = 0)
-    const rt_baseline = 280 + (32 + rtModifier) * 0 + 1 * 0 * 0;  // = 280
-    const diag_baseline = 90 - (2.5 + diagModifier) * 0 - 0.3 * 0 * 0;  // = 90
-    const clin_baseline = 95 - (3 + clinModifier) * 0 - 0.2 * 0 * 0;   // = 95
-    const hand_baseline = 90 - 2 * 0 - 0.2 * 0 * 0;  // = 90
-    
-    // Simulate attention lapses (simplified)
-    const laps_current = Math.exp(-1 + 0.25 * sleepDebt + 0.05 * sleepDebt * sleepDebt);
-    const laps_baseline = Math.exp(-1 + 0.25 * 0 + 0.05 * 0 * 0);  // = exp(-1) ≈ 0.37
-    
-    // Calculate percentage of baseline (100% = baseline performance)
-    // For RT: lower is better, so we invert the calculation
-    const norm_rt = Math.max(0, Math.min(120, (rt_baseline / rt_current) * 100));
-    const norm_clin = Math.max(0, Math.min(120, (clin_current / clin_baseline) * 100));
-    const norm_diag = Math.max(0, Math.min(120, (diag_current / diag_baseline) * 100));
-    const norm_hand = Math.max(0, Math.min(120, (hand_current / hand_baseline) * 100));
-    const norm_laps = Math.max(0, Math.min(120, (laps_baseline / laps_current) * 100));
-    
-    // Calculate overall performance (your base composite weights)
-    const overall = 0.40 * norm_clin + 0.25 * norm_rt + 0.15 * norm_laps + 0.10 * norm_diag + 0.10 * norm_hand;
-    
-    // Display results
-    displayResults(overall, norm_rt, norm_clin, norm_diag, norm_laps, norm_hand, sleepHours);
-}
-
-function displayResults(overall, rt, clin, diag, laps, hand, sleepHours) {
-    document.getElementById('results').classList.remove('hidden');
-    
-    // Overall score
-    const scoreElement = document.getElementById('overallScore');
-    const scoreValue = document.getElementById('scoreValue');
-    const scoreDescription = document.getElementById('scoreDescription');
-    
-    scoreValue.textContent = Math.round(overall) + '%';
-    
-    // Color coding and descriptions
-    if (overall >= 95) {
-        scoreElement.className = 'overall-score score-excellent';
-        scoreDescription.textContent = 'Optimal Performance';
-    } else if (overall >= 85) {
-        scoreElement.className = 'overall-score score-good';
-        scoreDescription.textContent = 'Good Performance';
-    } else if (overall >= 70) {
-        scoreElement.className = 'overall-score score-concerning';
-        scoreDescription.textContent = 'Impaired Performance';
-    } else {
-        scoreElement.className = 'overall-score score-critical';
-        scoreDescription.textContent = 'Severely Impaired';
-    }
-    
-    // Individual metrics with color coding
-    const metrics = [
-        {id: 'rtScore', value: rt},
-        {id: 'clinScore', value: clin},
-        {id: 'diagScore', value: diag},
-        {id: 'lapsScore', value: laps},
-        {id: 'handScore', value: hand}
-    ];
-    
-    metrics.forEach(metric => {
-        const element = document.getElementById(metric.id);
-        element.textContent = Math.round(metric.value) + '%';
-        
-        // Color coding based on performance vs baseline
-        if (metric.value >= 100) {
-            element.className = 'metric-value above-baseline';
-        } else if (metric.value >= 90) {
-            element.className = 'metric-value';
-        } else {
-            element.className = 'metric-value below-baseline';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Performance Sleep Calculator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
         }
-    });
-    
-    // Warning for low performance
-    const warningBox = document.getElementById('warningBox');
-    if (overall < 85 || sleepHours < 6) {
-        warningBox.classList.remove('hidden');
-    } else {
-        warningBox.classList.add('hidden');
-    }
-}
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+        
+        .input-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+        }
+        
+        input[type="number"], select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .calculate-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .results {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 5px solid #3498db;
+        }
+        
+        .overall-score {
+            text-align: center;
+            font-size: 48px;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            color: white;
+        }
+        
+        .score-excellent { background: linear-gradient(135deg, #27ae60, #2ecc71); }
+        .score-good { background: linear-gradient(135deg, #f39c12, #e67e22); }
+        .score-concerning { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .score-critical { background: linear-gradient(135deg, #8e44ad, #9b59b6); }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .metric-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .metric-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+        
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .metric-value.above-baseline {
+            color: #27ae60;
+        }
+        
+        .metric-value.below-baseline {
+            color: #e74c3c;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .info-box {
+            background: #e8f4fd;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Medical Performance Sleep Calculator</h1>
+        <p class="subtitle">Based on meta-analytic evidence from sleep deprivation studies</p>
+        
+        <div class="info-box">
+            <strong>Note:</strong> This calculator estimates performance deficits based on published research. Results are for educational purposes and should not replace professional medical advice or institutional sleep policies.
+        </div>
+        
+        <div class="input-group">
+            <label for="sleepHours">Sleep Hours (last night):</label>
+            <input type="number" id="sleepHours" min="0" max="12" step="0.1" placeholder="e.g., 6.5">
+        </div>
+        
+        <div class="input-group">
+            <label for="role">Role/Experience Level:</label>
+            <select id="role">
+                <option value="">Select role...</option>
+                <option value="student">Medical Student</option>
+                <option value="resident">Resident</option>
+                <option value="attending">Attending Physician</option>
+            </select>
+        </div>
+        
+        <button class="calculate-btn" onclick="calculatePerformance()">Calculate Performance Impact</button>
+        
+        <div id="results" class="results hidden">
+            <h3>Performance Assessment</h3>
+            
+            <div id="overallScore" class="overall-score">
+                <div style="font-size: 18px; font-weight: normal; margin-bottom: 10px;">Overall Performance</div>
+                <div id="scoreValue">--</div>
+                <div style="font-size: 16px; font-weight: normal; margin-top: 5px;" id="scoreDescription">--</div>
+            </div>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-title">Reaction Time</div>
+                    <div class="metric-value" id="rtScore">--</div>
+                    <div style="font-size: 12px; color: #7f8c8d;">% of baseline</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-title">Clinical Skills</div>
+                    <div class="metric-value" id="clinScore">--</div>
+                    <div style="font-size: 12px; color: #7f8c8d;">% of baseline</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-title">Diagnostic Accuracy</div>
+                    <div class="metric-value" id="diagScore">--</div>
+                    <div style="font-size: 12px; color: #7f8c8d;">% of baseline</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-title">Attention/Vigilance</div>
+                    <div class="metric-value" id="lapsScore">--</div>
+                    <div style="font-size: 12px; color: #7f8c8d;">% of baseline</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-title">Hand Dexterity</div>
+                    <div class="metric-value" id="handScore">--</div>
+                    <div style="font-size: 12px; color: #7f8c8d;">% of baseline</div>
+                </div>
+            </div>
+            
+            <div id="warningBox" class="warning hidden">
+                <strong>⚠️ Performance Warning:</strong> Current sleep levels indicate significant performance impairment that may affect patient safety and clinical decision-making.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function calculatePerformance() {
+            const sleepHours = parseFloat(document.getElementById('sleepHours').value);
+            const role = document.getElementById('role').value;
+            
+            if (!sleepHours || sleepHours < 0 || sleepHours > 12) {
+                alert('Please enter a valid sleep duration between 0 and 12 hours.');
+                return;
+            }
+            
+            if (!role) {
+                alert('Please select your role/experience level.');
+                return;
+            }
+            
+            // Calculate sleep debt (capped at 0 for >8 hours)
+            const sleepDebt = Math.max(0, 8 - sleepHours);
+            
+            // Role modifiers (from your model)
+            let rtModifier = 0;
+            let diagModifier = 0;
+            let clinModifier = 0;
+            
+            if (role === 'resident') {
+                rtModifier = 2;
+            } else if (role === 'attending') {
+                rtModifier = -2;
+                diagModifier = -0.5;
+                clinModifier = -1.0;
+            } else if (role === 'student') {
+                diagModifier = 0.5;
+                clinModifier = 0.5;
+            }
+            
+            // Calculate raw performance metrics (from your model)
+            const rt_current = 280 + (32 + rtModifier) * sleepDebt + 1 * sleepDebt * sleepDebt;
+            const diag_current = 90 - (2.5 + diagModifier) * sleepDebt - 0.3 * sleepDebt * sleepDebt;
+            const clin_current = 95 - (3 + clinModifier) * sleepDebt - 0.2 * sleepDebt * sleepDebt;
+            const hand_current = 90 - 2 * sleepDebt - 0.2 * sleepDebt * sleepDebt;
+            
+            // Calculate BASELINE values (at 8 hours sleep, debt = 0)
+            const rt_baseline = 280 + (32 + rtModifier) * 0 + 1 * 0 * 0;  // = 280
+            const diag_baseline = 90 - (2.5 + diagModifier) * 0 - 0.3 * 0 * 0;  // = 90
+            const clin_baseline = 95 - (3 + clinModifier) * 0 - 0.2 * 0 * 0;   // = 95
+            const hand_baseline = 90 - 2 * 0 - 0.2 * 0 * 0;  // = 90
+            
+            // Simulate attention lapses (simplified)
+            const laps_current = Math.exp(-1 + 0.25 * sleepDebt + 0.05 * sleepDebt * sleepDebt);
+            const laps_baseline = Math.exp(-1 + 0.25 * 0 + 0.05 * 0 * 0);  // = exp(-1) ≈ 0.37
+            
+            // Calculate percentage of baseline (100% = baseline performance)
+            // For RT: lower is better, so we invert the calculation
+            const norm_rt = Math.max(0, Math.min(120, (rt_baseline / rt_current) * 100));
+            const norm_clin = Math.max(0, Math.min(120, (clin_current / clin_baseline) * 100));
+            const norm_diag = Math.max(0, Math.min(120, (diag_current / diag_baseline) * 100));
+            const norm_hand = Math.max(0, Math.min(120, (hand_current / hand_baseline) * 100));
+            const norm_laps = Math.max(0, Math.min(120, (laps_baseline / laps_current) * 100));
+            
+            // Calculate overall performance (your base composite weights)
+            const overall = 0.40 * norm_clin + 0.25 * norm_rt + 0.15 * norm_laps + 0.10 * norm_diag + 0.10 * norm_hand;
+            
+            // Display results
+            displayResults(overall, norm_rt, norm_clin, norm_diag, norm_laps, norm_hand, sleepHours);
+        }
+        
+        function displayResults(overall, rt, clin, diag, laps, hand, sleepHours) {
+            document.getElementById('results').classList.remove('hidden');
+            
+            // Overall score
+            const scoreElement = document.getElementById('overallScore');
+            const scoreValue = document.getElementById('scoreValue');
+            const scoreDescription = document.getElementById('scoreDescription');
+            
+            scoreValue.textContent = Math.round(overall) + '%';
+            
+            // Color coding and descriptions
+            if (overall >= 95) {
+                scoreElement.className = 'overall-score score-excellent';
+                scoreDescription.textContent = 'Optimal Performance';
+            } else if (overall >= 85) {
+                scoreElement.className = 'overall-score score-good';
+                scoreDescription.textContent = 'Good Performance';
+            } else if (overall >= 70) {
+                scoreElement.className = 'overall-score score-concerning';
+                scoreDescription.textContent = 'Impaired Performance';
+            } else {
+                scoreElement.className = 'overall-score score-critical';
+                scoreDescription.textContent = 'Severely Impaired';
+            }
+            
+            // Individual metrics with color coding
+            const metrics = [
+                {id: 'rtScore', value: rt},
+                {id: 'clinScore', value: clin},
+                {id: 'diagScore', value: diag},
+                {id: 'lapsScore', value: laps},
+                {id: 'handScore', value: hand}
+            ];
+            
+            metrics.forEach(metric => {
+                const element = document.getElementById(metric.id);
+                element.textContent = Math.round(metric.value) + '%';
+                
+                // Color coding based on performance vs baseline
+                if (metric.value >= 100) {
+                    element.className = 'metric-value above-baseline';
+                } else if (metric.value >= 90) {
+                    element.className = 'metric-value';
+                } else {
+                    element.className = 'metric-value below-baseline';
+                }
+            });
+            
+            // Warning for low performance
+            const warningBox = document.getElementById('warningBox');
+            if (overall < 85 || sleepHours < 6) {
+                warningBox.classList.remove('hidden');
+            } else {
+                warningBox.classList.add('hidden');
+            }
+        }
+        
+        // Allow Enter key to calculate
+        document.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                calculatePerformance();
+            }
+        });
+    </script>
+</body>
+</html>
