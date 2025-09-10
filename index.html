@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f7fa;
@@ -101,7 +101,7 @@
         
         .metrics-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 15px;
             margin-top: 20px;
         }
@@ -134,6 +134,32 @@
             color: #e74c3c;
         }
         
+        .bac-comparison {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .bac-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .bac-value {
+            font-size: 36px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .bac-description {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
         .warning {
             background: #fff3cd;
             border: 1px solid #ffeaa7;
@@ -156,6 +182,27 @@
         .hidden {
             display: none;
         }
+        
+        .wellness-section {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f1f3f4;
+            border-radius: 8px;
+            border-left: 5px solid #9c27b0;
+        }
+        
+        .wellness-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .wellness-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
     </style>
 </head>
 <body>
@@ -164,7 +211,7 @@
         <p class="subtitle">Based on meta-analytic evidence from sleep deprivation studies</p>
         
         <div class="info-box">
-            <strong>Note:</strong> This calculator estimates performance deficits based on published research. Results are for educational purposes and should not replace professional medical advice or institutional sleep policies.
+            <strong>Note:</strong> This calculator estimates performance deficits based on published research including Williamson & Feyer (2000) BAC equivalence data. Results are for educational purposes and should not replace professional medical advice or institutional sleep policies.
         </div>
         
         <div class="input-group">
@@ -191,6 +238,12 @@
                 <div style="font-size: 18px; font-weight: normal; margin-bottom: 10px;">Overall Performance</div>
                 <div id="scoreValue">--</div>
                 <div style="font-size: 16px; font-weight: normal; margin-top: 5px;" id="scoreDescription">--</div>
+            </div>
+            
+            <div id="bacComparison" class="bac-comparison">
+                <div class="bac-title">Blood Alcohol Equivalent</div>
+                <div class="bac-value" id="bacValue">--</div>
+                <div class="bac-description" id="bacDescription">Based on Williamson & Feyer (2000) reaction time equivalence</div>
             </div>
             
             <div class="metrics-grid">
@@ -222,6 +275,23 @@
                     <div class="metric-title">Hand Dexterity</div>
                     <div class="metric-value" id="handScore">--</div>
                     <div style="font-size: 12px; color: #7f8c8d;">% of baseline</div>
+                </div>
+            </div>
+            
+            <div class="wellness-section">
+                <div class="wellness-title">Well-being & Mental Health</div>
+                <div class="wellness-grid">
+                    <div class="metric-card">
+                        <div class="metric-title">Mood Score</div>
+                        <div class="metric-value" id="moodScore">--</div>
+                        <div style="font-size: 12px; color: #7f8c8d;">0-100 scale</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-title">Burnout Risk</div>
+                        <div class="metric-value" id="burnoutScore">--</div>
+                        <div style="font-size: 12px; color: #7f8c8d;">probability</div>
+                    </div>
                 </div>
             </div>
             
@@ -272,31 +342,40 @@
             const hand_current = 90 - 2 * sleepDebt - 0.2 * sleepDebt * sleepDebt;
             
             // Calculate BASELINE values (at 8 hours sleep, debt = 0)
-            const rt_baseline = 280 + (32 + rtModifier) * 0 + 1 * 0 * 0;  // = 280
-            const diag_baseline = 90 - (2.5 + diagModifier) * 0 - 0.3 * 0 * 0;  // = 90
-            const clin_baseline = 95 - (3 + clinModifier) * 0 - 0.2 * 0 * 0;   // = 95
-            const hand_baseline = 90 - 2 * 0 - 0.2 * 0 * 0;  // = 90
+            const rt_baseline = 280 + (32 + rtModifier) * 0 + 1 * 0 * 0;
+            const diag_baseline = 90 - (2.5 + diagModifier) * 0 - 0.3 * 0 * 0;
+            const clin_baseline = 95 - (3 + clinModifier) * 0 - 0.2 * 0 * 0;
+            const hand_baseline = 90 - 2 * 0 - 0.2 * 0 * 0;
             
             // Simulate attention lapses (simplified)
             const laps_current = Math.exp(-1 + 0.25 * sleepDebt + 0.05 * sleepDebt * sleepDebt);
-            const laps_baseline = Math.exp(-1 + 0.25 * 0 + 0.05 * 0 * 0);  // = exp(-1) ≈ 0.37
+            const laps_baseline = Math.exp(-1 + 0.25 * 0 + 0.05 * 0 * 0);
+            
+            // Wellness metrics (from your model)
+            const mood_current = Math.max(0, Math.min(100, 80 - 2 * sleepDebt - 0.2 * sleepDebt * sleepDebt));
+            const burnout_p = 1 / (1 + Math.exp(-(-1.95 + 0.25 * sleepDebt))); // invlogit
             
             // Calculate percentage of baseline (100% = baseline performance)
-            // For RT: lower is better, so we invert the calculation
             const norm_rt = Math.max(0, Math.min(120, (rt_baseline / rt_current) * 100));
             const norm_clin = Math.max(0, Math.min(120, (clin_current / clin_baseline) * 100));
             const norm_diag = Math.max(0, Math.min(120, (diag_current / diag_baseline) * 100));
             const norm_hand = Math.max(0, Math.min(120, (hand_current / hand_baseline) * 100));
             const norm_laps = Math.max(0, Math.min(120, (laps_baseline / laps_current) * 100));
             
+            // Calculate BAC equivalent (Williamson & Feyer 2000)
+            // RT increase correlates with BAC: ~10ms increase ≈ 0.01% BAC
+            const rt_increase = rt_current - rt_baseline;
+            const bac_equivalent = Math.max(0, rt_increase / 10 * 0.01);
+            
             // Calculate overall performance (your base composite weights)
             const overall = 0.40 * norm_clin + 0.25 * norm_rt + 0.15 * norm_laps + 0.10 * norm_diag + 0.10 * norm_hand;
             
             // Display results
-            displayResults(overall, norm_rt, norm_clin, norm_diag, norm_laps, norm_hand, sleepHours);
+            displayResults(overall, norm_rt, norm_clin, norm_diag, norm_laps, norm_hand, 
+                          mood_current, burnout_p, bac_equivalent, sleepHours);
         }
         
-        function displayResults(overall, rt, clin, diag, laps, hand, sleepHours) {
+        function displayResults(overall, rt, clin, diag, laps, hand, mood, burnout, bac, sleepHours) {
             document.getElementById('results').classList.remove('hidden');
             
             // Overall score
@@ -319,6 +398,21 @@
             } else {
                 scoreElement.className = 'overall-score score-critical';
                 scoreDescription.textContent = 'Severely Impaired';
+            }
+            
+            // BAC Comparison
+            const bacValue = document.getElementById('bacValue');
+            const bacDescription = document.getElementById('bacDescription');
+            
+            if (bac <= 0.005) {
+                bacValue.textContent = '< 0.01%';
+                bacDescription.textContent = 'No significant impairment (Williamson & Feyer 2000)';
+            } else if (bac >= 0.08) {
+                bacValue.textContent = '≥ 0.08%';
+                bacDescription.textContent = 'Equivalent to legal intoxication threshold (Williamson & Feyer 2000)';
+            } else {
+                bacValue.textContent = bac.toFixed(3) + '%';
+                bacDescription.textContent = 'Blood alcohol equivalent based on reaction time (Williamson & Feyer 2000)';
             }
             
             // Individual metrics with color coding
@@ -344,9 +438,33 @@
                 }
             });
             
+            // Wellness metrics
+            document.getElementById('moodScore').textContent = Math.round(mood);
+            document.getElementById('burnoutScore').textContent = Math.round(burnout * 100) + '%';
+            
+            // Color coding for wellness
+            const moodElement = document.getElementById('moodScore');
+            const burnoutElement = document.getElementById('burnoutScore');
+            
+            if (mood >= 70) {
+                moodElement.className = 'metric-value above-baseline';
+            } else if (mood >= 60) {
+                moodElement.className = 'metric-value';
+            } else {
+                moodElement.className = 'metric-value below-baseline';
+            }
+            
+            if (burnout <= 15) {
+                burnoutElement.className = 'metric-value above-baseline';
+            } else if (burnout <= 30) {
+                burnoutElement.className = 'metric-value';
+            } else {
+                burnoutElement.className = 'metric-value below-baseline';
+            }
+            
             // Warning for low performance
             const warningBox = document.getElementById('warningBox');
-            if (overall < 85 || sleepHours < 6) {
+            if (overall < 85 || sleepHours < 6 || bac >= 0.05) {
                 warningBox.classList.remove('hidden');
             } else {
                 warningBox.classList.add('hidden');
