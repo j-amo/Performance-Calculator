@@ -365,7 +365,7 @@
             // Calculate BAC equivalent (Williamson & Feyer 2000)
             // RT increase correlates with BAC: ~20ms increase ≈ 0.01% BAC
             const rt_increase = rt_current - rt_baseline;
-            const bac_equivalent = Math.max(0, rt_increase / 20 * 0.01);
+            const bac_equivalent = Math.max(0, rt_increase / 25 * 0.01);
             
             // Calculate overall performance (your base composite weights)
             const overall = 0.40 * norm_clin + 0.25 * norm_rt + 0.15 * norm_laps + 0.10 * norm_diag + 0.10 * norm_hand;
