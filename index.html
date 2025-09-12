@@ -211,7 +211,7 @@
         <p class="subtitle">Based on meta-analytic evidence from sleep deprivation studies</p>
         
         <div class="info-box">
-            <strong>Note:</strong> This calculator estimates performance deficits based on published research including Williamson & Feyer (2000) BAC equivalence data. Results are for educational purposes and should not replace professional medical advice or institutional sleep policies.
+            <strong>Note:</strong> This calculator estimates performance deficits based on published research including Williamson & Feyer (2000) & Arnedt et al. (2005) BAC equivalence data.
         </div>
         
         <div class="input-group">
@@ -363,9 +363,9 @@
             const norm_laps = Math.max(0, Math.min(120, (laps_baseline / laps_current) * 100));
             
             // Calculate BAC equivalent (Williamson & Feyer 2000)
-            // RT increase correlates with BAC: ~10ms increase ≈ 0.01% BAC
+            // RT increase correlates with BAC: ~20ms increase ≈ 0.01% BAC
             const rt_increase = rt_current - rt_baseline;
-            const bac_equivalent = Math.max(0, rt_increase / 10 * 0.01);
+            const bac_equivalent = Math.max(0, rt_increase / 20 * 0.01);
             
             // Calculate overall performance (your base composite weights)
             const overall = 0.40 * norm_clin + 0.25 * norm_rt + 0.15 * norm_laps + 0.10 * norm_diag + 0.10 * norm_hand;
