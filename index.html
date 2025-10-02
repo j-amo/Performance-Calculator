@@ -1,470 +1,314 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Medical Performance Sleep Calculator</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f7fa;
-            color: #333;
-        }
-        
-        .container {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        
-        h1 {
-            text-align: center;
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-        
-        .subtitle {
-            text-align: center;
-            color: #7f8c8d;
-            margin-bottom: 30px;
-            font-style: italic;
-        }
-        
-        .input-group {
-            margin-bottom: 25px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #34495e;
-        }
-        
-        input[type="number"], select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e1e8ed;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        
-        input[type="number"]:focus, select:focus {
-            outline: none;
-            border-color: #3498db;
-        }
-        
-        .calculate-btn {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        
-        .calculate-btn:hover {
-            transform: translateY(-2px);
-        }
-        
-        .results {
-            margin-top: 30px;
-            padding: 25px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 5px solid #3498db;
-        }
-        
-        .overall-score {
-            text-align: center;
-            font-size: 48px;
-            font-weight: bold;
-            margin: 20px 0;
-            padding: 20px;
-            border-radius: 8px;
-            color: white;
-        }
-        
-        .score-excellent { background: linear-gradient(135deg, #27ae60, #2ecc71); }
-        .score-good { background: linear-gradient(135deg, #f39c12, #e67e22); }
-        .score-concerning { background: linear-gradient(135deg, #e74c3c, #c0392b); }
-        .score-critical { background: linear-gradient(135deg, #8e44ad, #9b59b6); }
-        
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-        
-        .metric-card {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-        
-        .metric-title {
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 8px;
-        }
-        
-        .metric-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #3498db;
-        }
-        
-        .metric-value.excellent {
-            color: #27ae60;
-        }
-        
-        .metric-value.good {
-            color: #f39c12;
-        }
-        
-        .metric-value.concerning {
-            color: #e74c3c;
-        }
-        
-        .bac-comparison {
-            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-            text-align: center;
-        }
-        
-        .bac-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        
-        .bac-value {
-            font-size: 36px;
-            font-weight: bold;
-            margin: 10px 0;
-        }
-        
-        .bac-description {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-        
-        .warning {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-        }
-        
-        .info-box {
-            background: #e8f4fd;
-            border: 1px solid #bee5eb;
-            color: #0c5460;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
-        .wellness-section {
-            margin-top: 25px;
-            padding: 20px;
-            background: #f1f3f4;
-            border-radius: 8px;
-            border-left: 5px solid #9c27b0;
-        }
-        
-        .wellness-title {
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-        
-        .wellness-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-    </style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Medical Performance Sleep Calculator</title>
+  <style>
+    :root{
+      --primary:#3498db; --primary-dark:#2980b9; --bg:#f5f7fa; --text:#333; --muted:#7f8c8d; --card:#fff;
+      --ok:#27ae60; --warn:#f39c12; --bad:#e74c3c;
+    }
+    *{ box-sizing:border-box }
+    body{ margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; }
+    .container{ max-width:960px; margin:0 auto; padding:16px; }
+    .panel{ background:var(--card); border-radius:12px; box-shadow:0 6px 12px rgba(0,0,0,.1); padding:clamp(16px,4vw,28px); }
+    h1{ text-align:center; color:#2c3e50; margin:8px 0 6px; font-size:clamp(22px,4.5vw,30px); }
+    .subtitle{ text-align:center; color:#777; margin:0 0 18px; font-style:italic; font-size:clamp(13px,3.5vw,15px); }
+    .info{ background:#e8f4fd; border:1px solid #bee5eb; color:#0c5460; padding:12px; border-radius:8px; margin-bottom:16px; font-size:14px; line-height:1.5; }
+    .grid{ display:grid; gap:16px; }
+    .grid-2{ grid-template-columns:1fr; }
+    .grid-4{ grid-template-columns:repeat(2,1fr); }
+    @media(min-width:640px){ .grid-2{ grid-template-columns:1fr 1fr; } .grid-4{ grid-template-columns:repeat(4,1fr); } }
+    label{ display:block; font-weight:600; margin-bottom:6px; color:#34495e; }
+    input[type="number"], select{ width:100%; padding:12px; border:2px solid #e1e8ed; border-radius:8px; font-size:16px; }
+    input:focus, select:focus{ outline:none; border-color:var(--primary); }
+    .helper{ font-size:12px; color:#7f8c8d; margin-top:4px; }
+    .btn{ width:100%; padding:14px; border:none; border-radius:8px; color:#fff; font-weight:700; font-size:17px; cursor:pointer; background:linear-gradient(135deg,var(--primary),var(--primary-dark)); }
+    .results{ margin-top:20px; padding:16px; background:#f8f9fa; border-radius:8px; border-left:5px solid var(--primary); }
+    .overall{ text-align:center; }
+    .overall-badge{ display:inline-block; min-width:220px; padding:10px 14px; border-radius:10px; color:#fff; font-weight:900; font-size:clamp(24px,6.5vw,36px); margin:6px 0; background:linear-gradient(135deg,#007bff,#0056b3); }
+    .excellent{ background:linear-gradient(135deg,#27ae60,#2ecc71)!important; }
+    .good{ background:linear-gradient(135deg,#007bff,#0056b3)!important; }
+    .impaired{ background:linear-gradient(135deg,#e67e22,#f39c12)!important; }
+    .critical{ background:linear-gradient(135deg,#e74c3c,#c0392b)!important; }
+    .overall-desc{ font-size:14px; color:#586471; margin-top:4px; }
+    .metric-card{ background:#fff; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,.08); padding:12px; }
+    .metric-title{ font-weight:800; color:#2c3e50; margin-bottom:4px; font-size:14px; }
+    .metric-value{ font-size:22px; font-weight:900; color:#2c3e50; }
+    .metric-sub{ font-size:12px; color:#7f8c8d; }
+    .delta-bad{ color:var(--bad); font-weight:700; }
+    .delta-ok{ color:var(--ok); font-weight:700; }
+    .bac{ background:linear-gradient(135deg,#34495e,#2c3e50); color:#fff; padding:14px; border-radius:10px; text-align:center; margin:14px 0; }
+    .bac-title{ font-weight:900; }
+    .bac-val{ font-weight:900; font-size:clamp(20px,6vw,32px); margin:6px 0; }
+    .warning{ background:#fff3cd; border:1px solid #ffeaa7; color:#856404; padding:12px; border-radius:8px; margin-top:12px; font-size:14px; }
+    .hidden{ display:none; }
+    .row{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:center; }
+    .pill{ display:inline-block; padding:2px 8px; border-radius:999px; background:#eef2f7; font-size:12px; color:#2c3e50; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Medical Performance Sleep Calculator</h1>
-        <p class="subtitle">Based on Monte Carlo simulation of sleep deprivation effects</p>
-        
-        <div class="info-box">
-            <strong>Note:</strong> This calculator estimates performance deficits based on published research and aligns with simulation data showing performance decrements with sleep deprivation.
-        </div>
-        
-        <div class="input-group">
-            <label for="sleepHours">Sleep Hours (last night):</label>
-            <input type="number" id="sleepHours" min="0" max="12" step="0.1" placeholder="e.g., 6.5">
-        </div>
-        
-        <div class="input-group">
-            <label for="role">Role/Experience Level:</label>
-            <select id="role">
-                <option value="">Select role...</option>
-                <option value="student">Medical Student</option>
-                <option value="resident">Resident</option>
-                <option value="attending">Attending Physician</option>
-            </select>
-        </div>
-        
-        <button class="calculate-btn" onclick="calculatePerformance()">Calculate Performance Impact</button>
-        
-        <div id="results" class="results hidden">
-            <h3>Performance Assessment</h3>
-            
-            <div id="overallScore" class="overall-score">
-                <div style="font-size: 18px; font-weight: normal; margin-bottom: 10px;">Overall Performance</div>
-                <div id="scoreValue">--</div>
-                <div style="font-size: 16px; font-weight: normal; margin-top: 5px;" id="scoreDescription">--</div>
-            </div>
-            
-            <div id="bacComparison" class="bac-comparison">
-                <div class="bac-title">Blood Alcohol Equivalent</div>
-                <div class="bac-value" id="bacValue">--</div>
-                <div class="bac-description" id="bacDescription">Based on Williamson & Feyer (2000) reaction time equivalence</div>
-            </div>
-            
-            <div class="metrics-grid">
-                <div class="metric-card">
-                    <div class="metric-title">Reaction Time</div>
-                    <div class="metric-value" id="rtScore">--</div>
-                    <div style="font-size: 12px; color: #7f8c8d;">normalized score</div>
-                </div>
-                
-                <div class="metric-card">
-                    <div class="metric-title">Clinical Skills</div>
-                    <div class="metric-value" id="clinScore">--</div>
-                    <div style="font-size: 12px; color: #7f8c8d;">normalized score</div>
-                </div>
-                
-                <div class="metric-card">
-                    <div class="metric-title">Diagnostic Accuracy</div>
-                    <div class="metric-value" id="diagScore">--</div>
-                    <div style="font-size: 12px; color: #7f8c8d;">normalized score</div>
-                </div>
-                
-                <div class="metric-card">
-                    <div class="metric-title">Attention/Vigilance</div>
-                    <div class="metric-value" id="lapsScore">--</div>
-                    <div style="font-size: 12px; color: #7f8c8d;">normalized score</div>
-                </div>
-            </div>
-            
-            <div class="wellness-section">
-                <div class="wellness-title">Well-being & Mental Health</div>
-                <div class="wellness-grid">
-                    <div class="metric-card">
-                        <div class="metric-title">Mood Score</div>
-                        <div class="metric-value" id="moodScore">--</div>
-                        <div style="font-size: 12px; color: #7f8c8d;">0-100 scale</div>
-                    </div>
-                    
-                    <div class="metric-card">
-                        <div class="metric-title">Burnout Risk</div>
-                        <div class="metric-value" id="burnoutScore">--</div>
-                        <div style="font-size: 12px; color: #7f8c8d;">probability</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="warningBox" class="warning hidden">
-                <strong>⚠️ Performance Warning:</strong> Current sleep levels indicate significant performance impairment that may affect patient safety and clinical decision-making.
-            </div>
-        </div>
-    </div>
+  <div class="container">
+    <div class="panel">
+      <h1>Medical Performance Sleep Calculator</h1>
+      <p class="subtitle">Based on Monte Carlo simulation of sleep deprivation effects</p>
 
-    <script>
-        function calculatePerformance() {
-            const sleepHours = parseFloat(document.getElementById('sleepHours').value);
-            const role = document.getElementById('role').value;
-            
-            if (Number.isNaN(sleepHours) || sleepHours < 0 || sleepHours > 12) {
-                alert('Please enter a valid sleep duration between 0 and 12 hours.');
-                return;
-            }
-            
-            if (!role) {
-                alert('Please select your role/experience level.');
-                return;
-            }
-            
-            // Calculate sleep debt (capped at 0 for >8 hours)
-            const sleepDebt = Math.max(0, 8 - sleepHours);
-            
-            // Role modifiers (corrected to match Stata model)
-            let rtModifier = 0;
-            let diagModifier = 0;
-            let clinModifier = 0;
-            
-            if (role === 'attending') {
-                rtModifier = -2;      // less RT slowing per hour
-                diagModifier = 0.5;   // less diagnostic decline per hour (protective)
-                clinModifier = 1.0;   // less clinical decline per hour (protective)
-            } else if (role === 'student') {
-                diagModifier = -0.5;  // more diagnostic decline per hour (worse performance)
-                clinModifier = -0.5;  // more clinical decline per hour (worse performance)
-            }
-            // residents: no additional modifiers in the Stata model
-            
-            // CORRECTED: Calculate raw performance metrics (declining with sleep debt)
-            const rt_current = 280 + (32 + rtModifier) * sleepDebt + 1 * sleepDebt * sleepDebt;
-            const diag_current = 90 - (2.5 - diagModifier) * sleepDebt - 0.3 * sleepDebt * sleepDebt;
-            const clin_current = 95 - (3 - clinModifier) * sleepDebt - 0.2 * sleepDebt * sleepDebt;
-            
-            // Simulate attention lapses (matching Stata model)
-            const laps_current = Math.exp(-1 + 0.25 * sleepDebt + 0.05 * sleepDebt * sleepDebt);
-            
-            // Wellness metrics (matching Stata model)
-            const mood_current = Math.max(0, Math.min(100, 80 - 2 * sleepDebt - 0.2 * sleepDebt * sleepDebt));
-            const burnout_p = 1 / (1 + Math.exp(-(-1.95 + 0.25 * sleepDebt))); // invlogit
-            
-            // Fixed-anchor normalization (matching Stata model)
-            const lapmax_fixed = 100; // approximating 99th percentile from simulation
-            const norm_rt = Math.max(0, Math.min(100, (600 - rt_current) / (600 - 200) * 100));
-            const norm_clin = Math.max(0, Math.min(100, (clin_current - 60) / (100 - 60) * 100));
-            const norm_diag = Math.max(0, Math.min(100, (diag_current - 70) / (100 - 70) * 100));
-            const norm_laps = Math.max(0, Math.min(100, (lapmax_fixed - laps_current) / lapmax_fixed * 100));
-            
-            // Calculate BAC equivalent (Williamson & Feyer 2000)
-            const rt_baseline = 280; // baseline RT at 0 sleep debt
-            const rt_increase = rt_current - rt_baseline;
-            const bac_equivalent = Math.max(0, rt_increase / 25 * 0.01);
-            
-            // Calculate overall performance (matching Stata composite: equal weights)
-            const overall = (norm_clin + norm_rt + norm_laps + norm_diag) / 4;
-            
-            // Display results
-            displayResults(overall, norm_rt, norm_clin, norm_diag, norm_laps, 
-                          mood_current, burnout_p, bac_equivalent, sleepHours);
-        }
-        
-        function displayResults(overall, rt, clin, diag, laps, mood, burnout, bac, sleepHours) {
-            document.getElementById('results').classList.remove('hidden');
-            
-            // Overall score (should align with Stata composite values)
-            const scoreElement = document.getElementById('overallScore');
-            const scoreValue = document.getElementById('scoreValue');
-            const scoreDescription = document.getElementById('scoreDescription');
-            
-            scoreValue.textContent = Math.round(overall);
-            
-            // Color coding based on Stata simulation results
-            if (overall >= 80) {
-                scoreElement.className = 'overall-score score-excellent';
-                scoreDescription.textContent = 'Optimal Performance';
-            } else if (overall >= 65) {
-                scoreElement.className = 'overall-score score-good';
-                scoreDescription.textContent = 'Good Performance';
-            } else if (overall >= 40) {
-                scoreElement.className = 'overall-score score-concerning';
-                scoreDescription.textContent = 'Impaired Performance';
-            } else {
-                scoreElement.className = 'overall-score score-critical';
-                scoreDescription.textContent = 'Severely Impaired';
-            }
-            
-            // BAC Comparison
-            const bacValue = document.getElementById('bacValue');
-            const bacDescription = document.getElementById('bacDescription');
-            
-            if (bac <= 0.005) {
-                bacValue.textContent = '< 0.01%';
-                bacDescription.textContent = 'No significant impairment (Williamson & Feyer 2000)';
-            } else if (bac >= 0.08) {
-                bacValue.textContent = '≥ 0.08%';
-                bacDescription.textContent = 'Equivalent to legal intoxication threshold (Williamson & Feyer 2000)';
-            } else {
-                bacValue.textContent = bac.toFixed(3) + '%';
-                bacDescription.textContent = 'Blood alcohol equivalent based on reaction time (Williamson & Feyer 2000)';
-            }
-            
-            // Individual metrics with color coding
-            const metrics = [
-                {id: 'rtScore', value: rt},
-                {id: 'clinScore', value: clin},
-                {id: 'diagScore', value: diag},
-                {id: 'lapsScore', value: laps}
-            ];
-            
-            metrics.forEach(metric => {
-                const element = document.getElementById(metric.id);
-                element.textContent = Math.round(metric.value);
-                
-                // Color coding based on normalized scores
-                if (metric.value >= 85) {
-                    element.className = 'metric-value excellent';
-                } else if (metric.value >= 70) {
-                    element.className = 'metric-value good';
-                } else {
-                    element.className = 'metric-value concerning';
-                }
-            });
-            
-            // Wellness metrics
-            document.getElementById('moodScore').textContent = Math.round(mood);
-            document.getElementById('burnoutScore').textContent = Math.round(burnout * 100) + '%';
-            
-            // Color coding for wellness
-            const moodElement = document.getElementById('moodScore');
-            const burnoutElement = document.getElementById('burnoutScore');
-            
-            if (mood >= 75) {
-                moodElement.className = 'metric-value excellent';
-            } else if (mood >= 65) {
-                moodElement.className = 'metric-value good';
-            } else {
-                moodElement.className = 'metric-value concerning';
-            }
-            
-            if (burnout <= 15) {
-                burnoutElement.className = 'metric-value excellent';
-            } else if (burnout <= 30) {
-                burnoutElement.className = 'metric-value good';
-            } else {
-                burnoutElement.className = 'metric-value concerning';
-            }
-            
-            // Warning for low performance (aligned with research thresholds)
-            const warningBox = document.getElementById('warningBox');
-            if (overall < 70 || sleepHours < 6 || bac >= 0.05) {
-                warningBox.classList.remove('hidden');
-            } else {
-                warningBox.classList.add('hidden');
-            }
-        }
-        
-        // Allow Enter key to calculate (improved handler)
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Enter' && document.activeElement.tagName !== 'BUTTON') {
-                calculatePerformance();
-            }
-        });
-    </script>
+      <div class="info">
+        Baselines (rested ≥8 h) are pooled and identical across roles. Role affects the sleep‑loss slopes only.
+      </div>
+
+      <div class="grid grid-2">
+        <div>
+          <label for="sleepHours">Sleep Hours (last night)</label>
+          <input type="number" id="sleepHours" min="0" max="12" step="0.1" placeholder="e.g., 4.0" inputmode="decimal"/>
+          <div class="helper">Enter 0–12 hours.</div>
+        </div>
+        <div>
+          <label for="role">Role/Experience Level</label>
+          <select id="role">
+            <option value="">Select role...</option>
+            <option value="student">Medical Student</option>
+            <option value="resident">Resident</option>
+            <option value="attending">Attending Physician</option>
+          </select>
+          <div class="helper">Affects the magnitude of decline with sleep loss, not the rested baseline.</div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px">
+        <button class="btn" id="calcBtn">Calculate Performance Impact</button>
+      </div>
+
+      <div id="results" class="results hidden" aria-live="polite">
+        <h3 style="margin:0 0 8px; text-align:center;">Performance Assessment</h3>
+
+        <div class="overall">
+          <div id="overallBadge" class="overall-badge"><span id="overallVal">--</span></div>
+          <div class="overall-desc">
+            Overall Performance (display composite)<br/>
+            <span id="overallRel" class="helper"></span>
+            <div class="row" style="margin-top:6px;">
+              <span class="pill">Rested baseline (all roles): RT 280 ms, Clin 95%, Diag 90%, Lapses 0.4</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bac" role="note">
+          <div class="bac-title">BAC-equivalent (heuristic, hours awake)</div>
+          <div class="bac-val" id="bacVal">--</div>
+          <div class="helper">≈0.04–0.05% at ~17–19 h awake (Williamson &amp; Feyer, 2000)</div>
+        </div>
+
+        <div class="grid grid-4">
+          <div class="metric-card">
+            <div class="metric-title">Reaction Time</div>
+            <div class="metric-value"><span id="rtMs">--</span> ms</div>
+            <div class="metric-sub"><span id="rtDelta">--</span> vs rested</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Attentional Lapses</div>
+            <div class="metric-value"><span id="lapsRaw">--</span></div>
+            <div class="metric-sub"><span id="lapsDelta">--</span> vs rested</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Clinical Skills</div>
+            <div class="metric-value"><span id="clinPct">--</span>%</div>
+            <div class="metric-sub" id="clinDelta">-- vs rested</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Diagnostic Accuracy</div>
+            <div class="metric-value"><span id="diagPct">--</span>%</div>
+            <div class="metric-sub" id="diagDelta">-- vs rested</div>
+          </div>
+        </div>
+
+        <div class="grid grid-2" style="margin-top:10px">
+          <div class="metric-card">
+            <div class="metric-title">Mood</div>
+            <div class="metric-value" id="moodScore">--</div>
+            <div class="metric-sub">0–100</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Burnout Risk</div>
+            <div class="metric-value" id="burnoutScore">--</div>
+            <div class="metric-sub">Probability</div>
+          </div>
+        </div>
+
+        <div id="warningBox" class="warning hidden">
+          <strong>⚠️ Performance Warning:</strong> Elevated risk based on current sleep/composite or extended wakefulness.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Replace with the exact Stata 99th percentile cap (lapmax_fixed = r(r1))
+    const LAPS_CAP = 91.0; // placeholder
+
+    // Pooled rested baselines (identical across roles)
+    const BASE_RT_MS   = 280;           // ms
+    const BASE_CLIN_PC = 95;            // %
+    const BASE_DIAG_PC = 90;            // %
+    const BASE_LAPSES  = Math.exp(-1);  // ≈0.3679
+
+    const clamp = (x,min,max) => Math.min(max, Math.max(min, x));
+    const c100 = x => clamp(x, 0, 100);
+
+    // Map raw metrics to 0–100 for the display composite only
+    // RT: 200–600 ms mapped to 100–0 (higher is worse)
+    const mapRtTo100 = rt_ms => c100(((600 - rt_ms) / (600 - 200)) * 100);
+    // Lapses: inverted vs a fixed cap
+    const mapLapsTo100 = laps => c100(((LAPS_CAP - laps) / LAPS_CAP) * 100);
+    // Clinical/Diagnostic are raw % already on 0–100 scale; clamp for safety
+    const mapPctTo100 = pct => c100(pct);
+
+    function compute(role, hours){
+      const d = Math.max(0, 8 - hours);
+
+      // Role affects only slopes (baseline intercepts fixed)
+      let rtSlopeAdj=0, diagSlopeAdj=0, clinSlopeAdj=0;
+      if (role === 'attending'){ rtSlopeAdj=-2; diagSlopeAdj=+0.5; clinSlopeAdj=+1.0; }
+      else if (role === 'student'){ diagSlopeAdj=-0.5; clinSlopeAdj=-0.5; }
+
+      const bRT   = 32 + rtSlopeAdj;
+      const bDiag = -2.5 + diagSlopeAdj;
+      const bClin = -3.0 + clinSlopeAdj;
+
+      // Deterministic central expectations (no noise)
+      const rt_ms   = BASE_RT_MS   + bRT * d + 1.0 * d * d;
+      const clin_pc = BASE_CLIN_PC + bClin * d - 0.2 * d * d;
+      const diag_pc = BASE_DIAG_PC + bDiag * d - 0.3 * d * d;
+      const laps    = Math.exp(-1 + 0.25 * d + 0.05 * d * d);
+
+      // Wellness
+      const mood    = c100(80 - 2.0 * d - 0.2 * d * d);
+      const burnout = 1 / (1 + Math.exp(-(-1.95 + 0.25 * d)));
+
+      // Display composite (map raw domains to 0–100 then average)
+      const rt100    = mapRtTo100(rt_ms);
+      const laps100  = mapLapsTo100(laps);
+      const clin100  = mapPctTo100(clin_pc);
+      const diag100  = mapPctTo100(diag_pc);
+      const overall  = (rt100 + clin100 + diag100 + laps100) / 4;
+
+      // Rested composite baseline (pooled)
+      const baseRt100   = mapRtTo100(BASE_RT_MS);
+      const baseClin100 = mapPctTo100(BASE_CLIN_PC);
+      const baseDiag100 = mapPctTo100(BASE_DIAG_PC);
+      const baseLaps100 = mapLapsTo100(BASE_LAPSES);
+      const overall0    = (baseRt100 + baseClin100 + baseDiag100 + baseLaps100) / 4;
+
+      // Hours-awake heuristic BAC
+      const hoursAwake = 24 - clamp(hours,0,12);
+      let bac_frac = 0;
+      if (hoursAwake > 14){
+        if (hoursAwake <= 17) bac_frac = (hoursAwake - 14) / 3 * 0.0002;            // 0 → 0.02%
+        else if (hoursAwake <= 19) bac_frac = 0.0002 + (hoursAwake - 17) / 2 * 0.0003; // 0.02% → 0.05%
+        else bac_frac = Math.min(0.0008, 0.0005 + (hoursAwake - 19) * 0.00005);     // up to 0.08%
+      }
+
+      return {
+        d, hoursAwake,
+        rt_ms, clin_pc, diag_pc, laps,
+        rt100, clin100, diag100, laps100, overall, overall0,
+        mood, burnout, bac_frac
+      };
+    }
+
+    // Percent deltas vs rested (positive = worse for RT/lapses; negative = worse for percentages)
+    function deltaPctHigherWorse(curr, base){
+      if (base <= 0) return { txt:'—', bad:false };
+      const pct = (curr / base - 1) * 100;
+      return { txt: (pct >= 0 ? '+' : '') + Math.round(pct) + '%', bad: pct > 0 };
+    }
+    function deltaPctHigherBetter(curr, base){
+      if (base <= 0) return { txt:'—', bad:false };
+      const pct = (curr / base - 1) * 100;
+      return { txt: (pct >= 0 ? '+' : '') + Math.round(pct) + '%', bad: pct < 0 };
+    }
+
+    function setBadgeClass(el, v){
+      if (v >= 80) el.className = 'overall-badge excellent';
+      else if (v >= 65) el.className = 'overall-badge good';
+      else if (v >= 40) el.className = 'overall-badge impaired';
+      else el.className = 'overall-badge critical';
+    }
+
+    function pctVsBaseline(curr, base){
+      if (base <= 0) return 'Baseline';
+      const pctOf = (curr / base) * 100;
+      if (pctOf >= 99.5) return 'Baseline';
+      const drop = Math.max(0, 100 - pctOf);
+      return `-${Math.round(drop)}% vs rested`;
+    }
+
+    function updateUI(res){
+      document.getElementById('results').classList.remove('hidden');
+
+      // Overall composite (display)
+      const overall = Math.round(res.overall);
+      const badge = document.getElementById('overallBadge');
+      setBadgeClass(badge, overall);
+      document.getElementById('overallVal').textContent = overall;
+      document.getElementById('overallRel').textContent = pctVsBaseline(res.overall, res.overall0);
+
+      // Reaction time raw + delta (higher worse)
+      document.getElementById('rtMs').textContent = Math.round(res.rt_ms);
+      const dRT = deltaPctHigherWorse(res.rt_ms, BASE_RT_MS);
+      const rtDeltaEl = document.getElementById('rtDelta');
+      rtDeltaEl.textContent = dRT.txt;
+      rtDeltaEl.className = dRT.bad ? 'delta-bad' : 'delta-ok';
+
+      // Lapses raw + delta (higher worse)
+      document.getElementById('lapsRaw').textContent = res.laps.toFixed(1);
+      const dLP = deltaPctHigherWorse(res.laps, BASE_LAPSES);
+      const lapsDeltaEl = document.getElementById('lapsDelta');
+      lapsDeltaEl.textContent = dLP.txt;
+      lapsDeltaEl.className = dLP.bad ? 'delta-bad' : 'delta-ok';
+
+      // Clinical raw % + delta (higher better)
+      document.getElementById('clinPct').textContent = res.clin_pc.toFixed(1);
+      const dClin = deltaPctHigherBetter(res.clin_pc, BASE_CLIN_PC);
+      const clinDeltaEl = document.getElementById('clinDelta');
+      clinDeltaEl.textContent = dClin.txt + ' vs rested';
+      clinDeltaEl.className = dClin.bad ? 'delta-bad' : 'delta-ok';
+
+      // Diagnostic raw % + delta (higher better)
+      document.getElementById('diagPct').textContent = res.diag_pc.toFixed(1);
+      const dDiag = deltaPctHigherBetter(res.diag_pc, BASE_DIAG_PC);
+      const diagDeltaEl = document.getElementById('diagDelta');
+      diagDeltaEl.textContent = dDiag.txt + ' vs rested';
+      diagDeltaEl.className = dDiag.bad ? 'delta-bad' : 'delta-ok';
+
+      // Wellness
+      document.getElementById('moodScore').textContent = Math.round(res.mood);
+      document.getElementById('burnoutScore').textContent = Math.round(res.burnout * 100) + '%';
+
+      // BAC
+      const bacPct = res.bac_frac * 100;
+      document.getElementById('bacVal').textContent = bacPct < 0.01 ? '<0.01%' : bacPct.toFixed(2) + '%';
+
+      // Warning
+      const warn = document.getElementById('warningBox');
+      if (overall < 70 || bacPct >= 0.05 || res.hoursAwake >= 17) warn.classList.remove('hidden');
+      else warn.classList.add('hidden');
+    }
+
+    function calculate(){
+      const hours = parseFloat(document.getElementById('sleepHours').value);
+      const role = document.getElementById('role').value;
+      if (Number.isNaN(hours) || hours < 0 || hours > 12){ alert('Enter a valid sleep duration between 0 and 12 hours.'); return; }
+      if (!role){ alert('Select your role.'); return; }
+      const res = compute(role, hours);
+      updateUI(res);
+    }
+
+    document.getElementById('calcBtn').addEventListener('click', calculate);
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT')) calculate();
+    });
+  </script>
 </body>
 </html>
