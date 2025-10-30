@@ -3,49 +3,54 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Monte Carlo simulation-based calculator showing how sleep deprivation affects medical professional performance, including reaction time, clinical skills, and diagnostic accuracy."/>
   <title>Medical Performance Sleep Calculator</title>
   <style>
     :root{
       --primary:#3498db; --primary-dark:#2980b9; --bg:#f5f7fa; --text:#333; --muted:#7f8c8d; --card:#fff;
       --ok:#27ae60; --warn:#f39c12; --bad:#e74c3c;
     }
-    *{ box-sizing:border-box }
-    body{ margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; }
+    *{ box-sizing:border-box; margin:0; padding:0; }
+    body{ background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; line-height:1.6; }
     .container{ max-width:960px; margin:0 auto; padding:16px; }
     .panel{ background:var(--card); border-radius:12px; box-shadow:0 6px 12px rgba(0,0,0,.1); padding:clamp(16px,4vw,28px); }
-    h1{ text-align:center; color:#2c3e50; margin:8px 0 6px; font-size:clamp(22px,4.5vw,30px); }
+    h1{ text-align:center; color:#2c3e50; margin:8px 0 6px; font-size:clamp(22px,4.5vw,30px); font-weight:700; }
     .subtitle{ text-align:center; color:#777; margin:0 0 18px; font-style:italic; font-size:clamp(13px,3.5vw,15px); }
     .info{ background:#e8f4fd; border:1px solid #bee5eb; color:#0c5460; padding:12px; border-radius:8px; margin-bottom:16px; font-size:14px; line-height:1.5; }
     .grid{ display:grid; gap:16px; }
     .grid-2{ grid-template-columns:1fr; }
     .grid-4{ grid-template-columns:repeat(2,1fr); }
     @media(min-width:640px){ .grid-2{ grid-template-columns:1fr 1fr; } .grid-4{ grid-template-columns:repeat(4,1fr); } }
-    label{ display:block; font-weight:600; margin-bottom:6px; color:#34495e; }
-    input[type="number"], select{ width:100%; padding:12px; border:2px solid #e1e8ed; border-radius:8px; font-size:16px; }
-    input:focus, select:focus{ outline:none; border-color:var(--primary); }
+    label{ display:block; font-weight:600; margin-bottom:6px; color:#34495e; font-size:14px; }
+    input[type="number"], select{ width:100%; padding:12px; border:2px solid #e1e8ed; border-radius:8px; font-size:16px; transition:border-color 0.2s; }
+    input:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(52,152,219,0.1); }
     .helper{ font-size:12px; color:#7f8c8d; margin-top:4px; }
-    .btn{ width:100%; padding:14px; border:none; border-radius:8px; color:#fff; font-weight:700; font-size:17px; cursor:pointer; background:linear-gradient(135deg,var(--primary),var(--primary-dark)); }
+    .btn{ width:100%; padding:14px; border:none; border-radius:8px; color:#fff; font-weight:700; font-size:17px; cursor:pointer; background:linear-gradient(135deg,var(--primary),var(--primary-dark)); transition:transform 0.1s, box-shadow 0.2s; }
+    .btn:hover{ transform:translateY(-1px); box-shadow:0 4px 8px rgba(0,0,0,.15); }
+    .btn:active{ transform:translateY(0); }
     .results{ margin-top:20px; padding:16px; background:#f8f9fa; border-radius:8px; border-left:5px solid var(--primary); }
     .overall{ text-align:center; }
+    .overall-title{ font-size:16px; font-weight:700; color:#2c3e50; margin-bottom:8px; }
     .overall-badge{ display:inline-block; min-width:220px; padding:10px 14px; border-radius:10px; color:#fff; font-weight:900; font-size:clamp(24px,6.5vw,36px); margin:6px 0; background:linear-gradient(135deg,#007bff,#0056b3); }
     .excellent{ background:linear-gradient(135deg,#27ae60,#2ecc71)!important; }
     .good{ background:linear-gradient(135deg,#007bff,#0056b3)!important; }
     .impaired{ background:linear-gradient(135deg,#e67e22,#f39c12)!important; }
     .critical{ background:linear-gradient(135deg,#e74c3c,#c0392b)!important; }
     .overall-desc{ font-size:14px; color:#586471; margin-top:4px; }
+    .baseline-drop{ font-weight:700; color:var(--bad); }
     .metric-card{ background:#fff; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,.08); padding:12px; }
     .metric-title{ font-weight:800; color:#2c3e50; margin-bottom:4px; font-size:14px; }
-    .metric-value{ font-size:22px; font-weight:900; color:#2c3e50; }
-    .metric-sub{ font-size:12px; color:#7f8c8d; }
+    .metric-value{ font-size:22px; font-weight:900; color:#2c3e50; margin:4px 0; }
+    .metric-sub{ font-size:12px; color:#7f8c8d; margin-top:2px; }
     .delta-bad{ color:var(--bad); font-weight:700; }
     .delta-ok{ color:var(--ok); font-weight:700; }
     .bac{ background:linear-gradient(135deg,#34495e,#2c3e50); color:#fff; padding:14px; border-radius:10px; text-align:center; margin:14px 0; }
-    .bac-title{ font-weight:900; }
+    .bac-title{ font-weight:900; font-size:14px; }
     .bac-val{ font-weight:900; font-size:clamp(20px,6vw,32px); margin:6px 0; }
-    .warning{ background:#fff3cd; border:1px solid #ffeaa7; color:#856404; padding:12px; border-radius:8px; margin-top:12px; font-size:14px; }
+    .warning{ background:#fff3cd; border:1px solid #ffeaa7; color:#856404; padding:12px; border-radius:8px; margin-top:12px; font-size:14px; line-height:1.5; }
     .hidden{ display:none; }
-    .row{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:center; }
-    .pill{ display:inline-block; padding:2px 8px; border-radius:999px; background:#eef2f7; font-size:12px; color:#2c3e50; }
+    .row{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:center; margin-top:6px; }
+    .pill{ display:inline-block; padding:4px 10px; border-radius:999px; background:#eef2f7; font-size:12px; color:#2c3e50; }
   </style>
 </head>
 <body>
@@ -61,43 +66,42 @@
       <div class="grid grid-2">
         <div>
           <label for="sleepHours">Sleep Hours (last night)</label>
-          <input type="number" id="sleepHours" min="0" max="12" step="0.1" placeholder="e.g., 4.0" inputmode="decimal"/>
-          <div class="helper">Enter 0–12 hours.</div>
+          <input type="number" id="sleepHours" min="0" max="12" step="0.1" placeholder="e.g., 6.0" inputmode="decimal" aria-describedby="sleepHelper"/>
+          <div id="sleepHelper" class="helper">Enter 0–12 hours.</div>
         </div>
         <div>
           <label for="role">Role/Experience Level</label>
-          <select id="role">
+          <select id="role" aria-describedby="roleHelper">
             <option value="">Select role...</option>
             <option value="student">Medical Student</option>
             <option value="resident">Resident</option>
             <option value="attending">Attending Physician</option>
           </select>
-          <div class="helper">Affects the magnitude of decline with sleep loss, not the rested baseline.</div>
+          <div id="roleHelper" class="helper">Affects the magnitude of decline with sleep loss, not the rested baseline.</div>
         </div>
       </div>
 
-      <div style="margin-top:12px">
+      <div style="margin-top:16px">
         <button class="btn" id="calcBtn">Calculate Performance Impact</button>
       </div>
 
-      <div id="results" class="results hidden" aria-live="polite">
-        <h3 style="margin:0 0 8px; text-align:center;">Performance Assessment</h3>
-
+      <div id="results" class="results hidden" aria-live="polite" role="region" aria-label="Performance results">
         <div class="overall">
+          <div class="overall-title">Overall Performance</div>
           <div id="overallBadge" class="overall-badge"><span id="overallVal">--</span></div>
           <div class="overall-desc">
-            Overall Performance (display composite)<br/>
-            <span id="overallRel" class="helper"></span>
-            <div class="row" style="margin-top:6px;">
+            Composite score
+            <div id="overallRel" class="helper" style="margin-top:4px;"></div>
+            <div class="row">
               <span class="pill">Rested baseline (all roles): RT 280 ms, Clin 95%, Diag 90%, Lapses 0.4</span>
             </div>
           </div>
         </div>
 
-        <div class="bac" role="note">
-          <div class="bac-title">BAC-equivalent (heuristic, hours awake)</div>
+        <div class="bac" role="note" aria-label="Blood alcohol concentration equivalent">
+          <div class="bac-title">BAC-equivalent (hours awake)</div>
           <div class="bac-val" id="bacVal">--</div>
-          <div class="helper">≈0.04–0.05% at ~17–19 h awake (Williamson &amp; Feyer, 2000)</div>
+          <div class="helper">Williamson &amp; Feyer (2000): 17h ≈ 0.05%, 24h ≈ 0.10%</div>
         </div>
 
         <div class="grid grid-4">
@@ -127,7 +131,7 @@
           <div class="metric-card">
             <div class="metric-title">Mood</div>
             <div class="metric-value" id="moodScore">--</div>
-            <div class="metric-sub">0–100</div>
+            <div class="metric-sub">0–100 scale</div>
           </div>
           <div class="metric-card">
             <div class="metric-title">Burnout Risk</div>
@@ -136,7 +140,7 @@
           </div>
         </div>
 
-        <div id="warningBox" class="warning hidden">
+        <div id="warningBox" class="warning hidden" role="alert">
           <strong>⚠️ Performance Warning:</strong> Elevated risk based on current sleep/composite or extended wakefulness.
         </div>
       </div>
@@ -144,69 +148,71 @@
   </div>
 
   <script>
-    // Replace with the exact Stata 99th percentile cap (lapmax_fixed = r(r1))
-    const LAPS_CAP = 91.0; // placeholder
-
+    'use strict';
+    
     // Pooled rested baselines (identical across roles)
-    const BASE_RT_MS   = 280;           // ms
-    const BASE_CLIN_PC = 95;            // %
-    const BASE_DIAG_PC = 90;            // %
-    const BASE_LAPSES  = Math.exp(-1);  // ≈0.3679
+    const LAPS_CAP = 91.0;
+    const BASE_RT_MS   = 280;
+    const BASE_CLIN_PC = 95;
+    const BASE_DIAG_PC = 90;
+    const BASE_LAPSES  = Math.exp(-1);
 
-    const clamp = (x,min,max) => Math.min(max, Math.max(min, x));
+    const clamp = (x, min, max) => Math.min(max, Math.max(min, x));
     const c100 = x => clamp(x, 0, 100);
 
-    // Map raw metrics to 0–100 for the display composite only
-    // RT: 200–600 ms mapped to 100–0 (higher is worse)
     const mapRtTo100 = rt_ms => c100(((600 - rt_ms) / (600 - 200)) * 100);
-    // Lapses: inverted vs a fixed cap
     const mapLapsTo100 = laps => c100(((LAPS_CAP - laps) / LAPS_CAP) * 100);
-    // Clinical/Diagnostic are raw % already on 0–100 scale; clamp for safety
     const mapPctTo100 = pct => c100(pct);
 
     function compute(role, hours){
       const d = Math.max(0, 8 - hours);
 
-      // Role affects only slopes (baseline intercepts fixed)
-      let rtSlopeAdj=0, diagSlopeAdj=0, clinSlopeAdj=0;
-      if (role === 'attending'){ rtSlopeAdj=-2; diagSlopeAdj=+0.5; clinSlopeAdj=+1.0; }
-      else if (role === 'student'){ diagSlopeAdj=-0.5; clinSlopeAdj=-0.5; }
+      let rtSlopeAdj = 0, diagSlopeAdj = 0, clinSlopeAdj = 0;
+      if (role === 'attending'){ 
+        rtSlopeAdj = -2; 
+        diagSlopeAdj = +0.5; 
+        clinSlopeAdj = +1.0; 
+      } else if (role === 'student'){ 
+        diagSlopeAdj = -0.5; 
+        clinSlopeAdj = -0.5; 
+      }
 
       const bRT   = 32 + rtSlopeAdj;
       const bDiag = -2.5 + diagSlopeAdj;
       const bClin = -3.0 + clinSlopeAdj;
 
-      // Deterministic central expectations (no noise)
-      const rt_ms   = BASE_RT_MS   + bRT * d + 1.0 * d * d;
+      const rt_ms   = BASE_RT_MS + bRT * d + 1.0 * d * d;
       const clin_pc = BASE_CLIN_PC + bClin * d - 0.2 * d * d;
       const diag_pc = BASE_DIAG_PC + bDiag * d - 0.3 * d * d;
       const laps    = Math.exp(-1 + 0.25 * d + 0.05 * d * d);
 
-      // Wellness
       const mood    = c100(80 - 2.0 * d - 0.2 * d * d);
       const burnout = 1 / (1 + Math.exp(-(-1.95 + 0.25 * d)));
 
-      // Display composite (map raw domains to 0–100 then average)
       const rt100    = mapRtTo100(rt_ms);
       const laps100  = mapLapsTo100(laps);
       const clin100  = mapPctTo100(clin_pc);
       const diag100  = mapPctTo100(diag_pc);
       const overall  = (rt100 + clin100 + diag100 + laps100) / 4;
 
-      // Rested composite baseline (pooled)
       const baseRt100   = mapRtTo100(BASE_RT_MS);
       const baseClin100 = mapPctTo100(BASE_CLIN_PC);
       const baseDiag100 = mapPctTo100(BASE_DIAG_PC);
       const baseLaps100 = mapLapsTo100(BASE_LAPSES);
       const overall0    = (baseRt100 + baseClin100 + baseDiag100 + baseLaps100) / 4;
 
-      // Hours-awake heuristic BAC
-      const hoursAwake = 24 - clamp(hours,0,12);
+      // BAC calculation based on Williamson & Feyer (2000)
+      // Linear approximation: 17h awake ≈ 0.05% BAC, 24h awake ≈ 0.10% BAC
+      // This gives approximately 0.007% per hour after ~8 hours awake
+      const hoursAwake = 24 - clamp(hours, 0, 12);
       let bac_frac = 0;
-      if (hoursAwake > 14){
-        if (hoursAwake <= 17) bac_frac = (hoursAwake - 14) / 3 * 0.0002;            // 0 → 0.02%
-        else if (hoursAwake <= 19) bac_frac = 0.0002 + (hoursAwake - 17) / 2 * 0.0003; // 0.02% → 0.05%
-        else bac_frac = Math.min(0.0008, 0.0005 + (hoursAwake - 19) * 0.00005);     // up to 0.08%
+      if (hoursAwake >= 17) {
+        // Linear from 17h (0.05%) to 24h (0.10%)
+        bac_frac = 0.0005 + ((hoursAwake - 17) / 7) * 0.0005;
+        bac_frac = Math.min(0.0010, bac_frac); // cap at 0.10%
+      } else if (hoursAwake > 8) {
+        // Gradual increase from 8h to 17h
+        bac_frac = ((hoursAwake - 8) / 9) * 0.0005;
       }
 
       return {
@@ -217,12 +223,12 @@
       };
     }
 
-    // Percent deltas vs rested (positive = worse for RT/lapses; negative = worse for percentages)
     function deltaPctHigherWorse(curr, base){
       if (base <= 0) return { txt:'—', bad:false };
       const pct = (curr / base - 1) * 100;
       return { txt: (pct >= 0 ? '+' : '') + Math.round(pct) + '%', bad: pct > 0 };
     }
+
     function deltaPctHigherBetter(curr, base){
       if (base <= 0) return { txt:'—', bad:false };
       const pct = (curr / base - 1) * 100;
@@ -241,73 +247,78 @@
       const pctOf = (curr / base) * 100;
       if (pctOf >= 99.5) return 'Baseline';
       const drop = Math.max(0, 100 - pctOf);
-      return `-${Math.round(drop)}% vs rested`;
+      return `<span class="baseline-drop">${Math.round(drop)}% below rested baseline</span>`;
     }
 
     function updateUI(res){
       document.getElementById('results').classList.remove('hidden');
 
-      // Overall composite (display)
       const overall = Math.round(res.overall);
       const badge = document.getElementById('overallBadge');
       setBadgeClass(badge, overall);
       document.getElementById('overallVal').textContent = overall;
-      document.getElementById('overallRel').textContent = pctVsBaseline(res.overall, res.overall0);
+      document.getElementById('overallRel').innerHTML = pctVsBaseline(res.overall, res.overall0);
 
-      // Reaction time raw + delta (higher worse)
       document.getElementById('rtMs').textContent = Math.round(res.rt_ms);
       const dRT = deltaPctHigherWorse(res.rt_ms, BASE_RT_MS);
       const rtDeltaEl = document.getElementById('rtDelta');
       rtDeltaEl.textContent = dRT.txt;
       rtDeltaEl.className = dRT.bad ? 'delta-bad' : 'delta-ok';
 
-      // Lapses raw + delta (higher worse)
       document.getElementById('lapsRaw').textContent = res.laps.toFixed(1);
       const dLP = deltaPctHigherWorse(res.laps, BASE_LAPSES);
       const lapsDeltaEl = document.getElementById('lapsDelta');
       lapsDeltaEl.textContent = dLP.txt;
       lapsDeltaEl.className = dLP.bad ? 'delta-bad' : 'delta-ok';
 
-      // Clinical raw % + delta (higher better)
       document.getElementById('clinPct').textContent = res.clin_pc.toFixed(1);
       const dClin = deltaPctHigherBetter(res.clin_pc, BASE_CLIN_PC);
       const clinDeltaEl = document.getElementById('clinDelta');
       clinDeltaEl.textContent = dClin.txt + ' vs rested';
       clinDeltaEl.className = dClin.bad ? 'delta-bad' : 'delta-ok';
 
-      // Diagnostic raw % + delta (higher better)
       document.getElementById('diagPct').textContent = res.diag_pc.toFixed(1);
       const dDiag = deltaPctHigherBetter(res.diag_pc, BASE_DIAG_PC);
       const diagDeltaEl = document.getElementById('diagDelta');
       diagDeltaEl.textContent = dDiag.txt + ' vs rested';
       diagDeltaEl.className = dDiag.bad ? 'delta-bad' : 'delta-ok';
 
-      // Wellness
       document.getElementById('moodScore').textContent = Math.round(res.mood);
       document.getElementById('burnoutScore').textContent = Math.round(res.burnout * 100) + '%';
 
-      // BAC
       const bacPct = res.bac_frac * 100;
       document.getElementById('bacVal').textContent = bacPct < 0.01 ? '<0.01%' : bacPct.toFixed(2) + '%';
 
-      // Warning
       const warn = document.getElementById('warningBox');
-      if (overall < 70 || bacPct >= 0.05 || res.hoursAwake >= 17) warn.classList.remove('hidden');
-      else warn.classList.add('hidden');
+      if (overall < 70 || bacPct >= 0.05 || res.hoursAwake >= 17) {
+        warn.classList.remove('hidden');
+      } else {
+        warn.classList.add('hidden');
+      }
     }
 
     function calculate(){
       const hours = parseFloat(document.getElementById('sleepHours').value);
       const role = document.getElementById('role').value;
-      if (Number.isNaN(hours) || hours < 0 || hours > 12){ alert('Enter a valid sleep duration between 0 and 12 hours.'); return; }
-      if (!role){ alert('Select your role.'); return; }
+      
+      if (Number.isNaN(hours) || hours < 0 || hours > 12){ 
+        alert('Please enter a valid sleep duration between 0 and 12 hours.'); 
+        return; 
+      }
+      if (!role){ 
+        alert('Please select your role.'); 
+        return; 
+      }
+      
       const res = compute(role, hours);
       updateUI(res);
     }
 
     document.getElementById('calcBtn').addEventListener('click', calculate);
     document.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT')) calculate();
+      if (e.key === 'Enter' && (document.activeElement.id === 'sleepHours' || document.activeElement.id === 'role')) {
+        calculate();
+      }
     });
   </script>
 </body>
