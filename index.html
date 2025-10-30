@@ -99,9 +99,9 @@
         </div>
 
         <div class="bac" role="note" aria-label="Blood alcohol concentration equivalent">
-          <div class="bac-title">BAC-equivalent (hours awake)</div>
+          <div class="bac-title">BAC-equivalent (sleep deprivation)</div>
           <div class="bac-val" id="bacVal">--</div>
-          <div class="helper">Williamson &amp; Feyer (2000): 17h ≈ 0.05%, 24h ≈ 0.10%</div>
+          <div class="helper">Williamson &amp; Feyer (2000): 17h awake ≈ 0.05%, 24h+ awake ≈ 0.10%</div>
         </div>
 
         <div class="grid grid-4">
@@ -164,6 +164,27 @@
     const mapLapsTo100 = laps => c100(((LAPS_CAP - laps) / LAPS_CAP) * 100);
     const mapPctTo100 = pct => c100(pct);
 
+    function getBacFromHours(hours) {
+      // Hard-coded BAC values based on sleep hours
+      if (hours >= 7) {
+        return 0.00005; // <0.01%
+      } else if (hours >= 6) {
+        return 0.0002; // 0.02%
+      } else if (hours >= 5) {
+        return 0.0003; // 0.03%
+      } else if (hours >= 4) {
+        return 0.0004; // 0.04%
+      } else if (hours >= 3) {
+        return 0.0005; // 0.05%
+      } else if (hours >= 2) {
+        return 0.0006; // 0.06%
+      } else if (hours >= 1) {
+        return 0.0008; // 0.08%
+      } else {
+        return 0.001; // 0.10%
+      }
+    }
+
     function compute(role, hours){
       const d = Math.max(0, 8 - hours);
 
@@ -201,22 +222,10 @@
       const baseLaps100 = mapLapsTo100(BASE_LAPSES);
       const overall0    = (baseRt100 + baseClin100 + baseDiag100 + baseLaps100) / 4;
 
-      // BAC calculation based on Williamson & Feyer (2000)
-      // Linear approximation: 17h awake ≈ 0.05% BAC, 24h awake ≈ 0.10% BAC
-      // This gives approximately 0.007% per hour after ~8 hours awake
-      const hoursAwake = 24 - clamp(hours, 0, 12);
-      let bac_frac = 0;
-      if (hoursAwake >= 17) {
-        // Linear from 17h (0.05%) to 24h (0.10%)
-        bac_frac = 0.0005 + ((hoursAwake - 17) / 7) * 0.0005;
-        bac_frac = Math.min(0.0010, bac_frac); // cap at 0.10%
-      } else if (hoursAwake > 8) {
-        // Gradual increase from 8h to 17h
-        bac_frac = ((hoursAwake - 8) / 9) * 0.0005;
-      }
+      const bac_frac = getBacFromHours(hours);
 
       return {
-        d, hoursAwake,
+        d,
         rt_ms, clin_pc, diag_pc, laps,
         rt100, clin100, diag100, laps100, overall, overall0,
         mood, burnout, bac_frac
@@ -290,7 +299,7 @@
       document.getElementById('bacVal').textContent = bacPct < 0.01 ? '<0.01%' : bacPct.toFixed(2) + '%';
 
       const warn = document.getElementById('warningBox');
-      if (overall < 70 || bacPct >= 0.05 || res.hoursAwake >= 17) {
+      if (overall < 70 || bacPct >= 0.05 || res.d >= 3) {
         warn.classList.remove('hidden');
       } else {
         warn.classList.add('hidden');
